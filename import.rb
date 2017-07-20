@@ -8,6 +8,7 @@ $DATAREPO="git@github.com:simp/simp-metadata.git"
 
 begin
   Dir.mkdir("scratch")
+  Dir.mkdir("scratch/data")
 rescue
 end
 
@@ -19,17 +20,18 @@ Dir.chdir("scratch") do
       `git fetch origin`
     end
   end
-  unless Dir.exists?("data")
-    `git clone #{$DATAREPO} data`
-  else
-    Dir.chdir("data") do
-      `git pull origin`
+  Dir.chdir("data") do
+    unless Dir.exists?("simp-metadata/")
+      `git clone #{$DATAREPO} simp-metadata`
+    else
+      Dir.chdir("simp-metadata") do
+        `git pull origin`
+      end
     end
-  end
-  begin
-    Dir.mkdir("data")
-    Dir.mkdir("data/releases")
-  rescue
+    begin
+      Dir.mkdir("data/releases")
+    rescue
+    end
   end
 end
 
@@ -40,7 +42,7 @@ else
   repos = [ $DATAREPO, repo ]
 end
 
-metadata = Simp::Metadata::Engine.new("scratch/data", repos)
+metadata = Simp::Metadata::Engine.new("scratch", repos)
 #binding.pry
 
 data = {}
@@ -139,14 +141,14 @@ Dir.chdir("scratch/upstream") do
   end
 end
 comp = { "components" => components }
-File.open("scratch/data/v1/components.yaml", 'w') {|f| f.write comp.to_yaml }
+File.open("scratch/data/simp-metadata/v1/components.yaml", 'w') {|f| f.write comp.to_yaml }
 
 data['releases'].each do |key, value|
   release = { "releases" => { key => value } }
-  File.open("scratch/data/v1/releases/#{key}.yaml", 'w') {|f| f.write release.to_yaml }
+  File.open("scratch/data/simp-metadata/v1/releases/#{key}.yaml", 'w') {|f| f.write release.to_yaml }
 end
 Dir.chdir("scratch/data") do
   `git add -A`
   `git commit -m "Auto Update by rubygem-simp-metadata"`
-#  `git push origin`
+  #  `git push origin`
 end
