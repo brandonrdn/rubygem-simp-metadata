@@ -1,8 +1,11 @@
 # vim: set expandtab ts=2 sw=2:
+$LOAD_PATH.unshift File.expand_path('../lib', __FILE__)
+require 'simp/metadata/version'
+
 Gem::Specification.new do |s|
   s.name = 'simp-metadata'
   s.date = '2017-05-16'
-  s.version = '0.0.1'
+  s.version = Simp::Metadata::VERSION
   s.summary = 'SIMP Metadata Library'
   s.description = 'A library for accessing the SIMP metadata format for the simp project'
   s.authors = [

@@ -1,0 +1,38 @@
+---
+language: ruby
+cache: bundler
+sudo: false
+before_install:
+  - rm Gemfile.lock || true
+bundler_args: "--without development --path .vendor"
+notifications:
+  email: false
+rvm:
+  - 2.1.9
+  - 2.3.3
+env:
+  - SIMP_SKIP_NON_SIMPOS_TESTS=1
+script:
+  - echo 'I need tests'
+matrix:
+  fast_finish: true
+before_deploy:
+  - "export GEM_VERSION=`ruby -r ./lib/simp/metadata/version.rb -e 'puts Simp::Metadata::VERSION'`"
+  - '[[ $TRAVIS_TAG =~ ^${GEM_VERSION}$ ]]'
+deploy:
+  - provider: rubygems
+    gemspec: simp-metadata.gemspec
+    gem: simp-metadata
+    api_key:
+      secure: "1EFVstErsH7Q1BM3TbJ5mJ/0GPGgLXgi+bdBDgaEo5fzARVib1ZW84PEikzHJI8EhX0UjJX43VPbzXSg5XX2SoNq2Xdb9/Gbe9qhg0vTFSN+bFXbAcKit5AULhoVq/Tglk8jJshXstnijJzooKdzFCkCSqcpfr97Wrz16CpSje/M7KRPlGnJI/aE6c4xPSgtMVaXVx0nZBxyogUjAa/oZ9UtrlW/37BrXcGd4hg76nz1nEE51VSvmWmd/Sck/ypsSMz5yKM7ztm3+cnXUqyTeXVR/TR+gaxfil7SK9449bLlH0/bkkS3eBmu0FiDzu4/Ue2gA2VKpQd6oG8WKm5SPcQCsqk9o37LrsGQXS+ahq1GiA6c+Xkl2h9L5XPOQEeFBYJHLi93DRKPO0rs2AOZYSr1u6bAIq9JagJkHhK+wF9k6I7k7BHGE3y/ipyLkDiVvIaOw7SyenU2Q9Skwza5iw6XAn/EOSn6ttapiSmMkvpx91T/Cl0K8RLQVWspiCLePzcCh+xY/22wHGithzfvumsWks6dQIn9GhWey0ciIguUV7Ir70gnj6rIaClDZaHZmoMnStzo7vvjCva7jZ4MDybRLewHIQWhBwmJ/lAT/zR5Roo/Rx27sl41F3v0QaAdHEMmNF0JA88Funbs4to3cOkB9W5YN0OlzwM71tvs74U="
+    on:
+      tags: true
+      rvm: 2.1.9
+      condition: "($SKIP_PUBLISH != true)"
+  - provider: releases
+    api_key:
+      secure: "j2GpfJKsoyRnkzDK/0yCNWe+HWv5o7zltAFFkiPd8fS1E5Y0AbrVyaui/DyME8LwTkF9FDIKZLFAh0XVvxOww4JgpUu2ABXO3GcnxfswK9C/mnMHRd379IwxC1YS9Nd8+qZV37r92ylG7IgvOgSYrnXB2JZZCpl+QSyOjW0yBKhBbSV81wameSTTsiK0ZAYHz7z99m5AN9vxzAgDZ4bhoi3fqN1+iAnwcqwifN4RDw68pcbgg7RXy/bK4J4yUUqjwQcx71fPZFn7yFx6SR4VY7PVYcv4gKWz3v8RrTLurW+EY0s8q1axM/UhbRw531JuFxpQXM5MEzCyo03a93xqXneBHz/gHgkesvDBotGu46hS+AOzTmNnqSXuk7xLjPLWkGsqQn9QQI0KK8GOA7hZkeIarDYeK3VidyFJgLKOCQLmYEXHNjdVe5YEv/HQEJuSvnzWSs3Ksd1rjrRmIYtgRU0moVXClkslaY73DgYXXfR/siad9xMUyuMTJwuXqFKQByBesXIbnmRk+owneHdx9doeM9GCxPXJjoWGC9GTxj0YyhjIEJSsihAxDEW/6K+cy4S3nBv7VeGwUbSb2K3yPxJRTl1eHf5Ee7N6GoMvVzxrjuG+S08O4GYt1Rpph0HpygY7il8ZEMtz67nMsQcLcrd1UUKAbJku+0uWhIt9XGw="
+    on:
+      tags: true
+      rvm: 2.1.9
+      condition: "($SKIP_PUBLISH != true)"
