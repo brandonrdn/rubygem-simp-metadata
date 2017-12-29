@@ -1,0 +1,21 @@
+stages:
+        - pre-build-testing
+        - build
+        - test
+        - deploy
+        - notify
+ruby-spec-test:
+         stage: pre-build-testing
+         tags:
+                 - docker
+         image: ruby:2.1
+         artifacts:
+                 paths:
+                         - 'coverage/*'
+         script:
+                 - apt-get update
+                 - apt-get install -y gcc make
+                 - export JAVA_OPTS="-XX:+UseG1GC -XX:+UseStringDeduplication"
+                 - bundle install
+                 - bundle update
+                 - bundle exec rake spec
