@@ -8,28 +8,29 @@ module Simp
       attr_accessor :output
 
       def debug2(output)
-        puts output
+        Simp::Metadata.debug2(output)
       end
 
       def debug1(output)
-        puts output
+        Simp::Metadata.debug1(output)
       end
 
       def info(output)
-        puts output
+        Simp::Metadata.info(output)
       end
 
       def warning(output)
-        puts output
+        Simp::Metadata.warning(output)
       end
 
       def error(output)
-        puts output
+        Simp::Metadata.error(output)
       end
 
       def critical(output)
-        puts output
+        Simp::Metadata.critical(output)
       end
+
       def initialize(options ={})
         {
             "input_type" => "internet",

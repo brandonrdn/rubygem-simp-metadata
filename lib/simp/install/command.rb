@@ -57,6 +57,9 @@ module Simp
           opts.on("-B", "--destination_branch [branch_name]", "destination branch to use (control-repo output only)") do |opt|
             options["destination_branch"] = opt
           end
+          opts.on("-d", "--debug [level]", "debug logging level: critical, error, warning, info, debug1, debug2") do |opt|
+            $simp_metadata_debug_level = opt
+          end
         end.parse!(argv)
         media = Simp::Media::Engine.new(options)
         media.run
