@@ -68,10 +68,17 @@ module Simp
           target = @output.target_directory
         end
         # XXX ToDo: this should all come from the bootstrap_source in the metadata engine
-        metadata_components = [
-            "enterprise-metadata",
-            "simp-metadata"
-        ]
+        case @options["edition"]
+          when "community"
+            metadata_components = [
+                "simp-metadata"
+            ]
+          when "enterprise"
+            metadata_components = [
+                "enterprise-metadata",
+                "simp-metadata"
+            ]
+        end
         metadatapaths = []
 
         # XXX ToDo: only set this if input is specified
@@ -83,7 +90,8 @@ module Simp
             result = @input.fetch_component(metadata, { "target" => target})
             metadatapaths << { :name => metadata, :url => result["path"] }
           rescue Exception => ex
-            puts ex
+            Simp::Metadata.critical("cannot install #{@options["edition"]} edition, unable to download #{metadata}")
+            exit 2
           end
         end
 
@@ -91,9 +99,9 @@ module Simp
           raise "Need one working metadata"
         end
         # XXX ToDo: Bring the engine creation up higher in the file since we now have bootstrap metadata
-        metadata = Simp::Metadata::Engine.new(nil, metadatapaths)
+        metadata = Simp::Metadata::Engine.new(nil, metadatapaths, @options["edition"])
         metadata.releases[@options["version"]].components.each do |component|
-          retval = @input.fetch_component(component,{})
+          retval = @input.fetch_component(component, {})
           @output.add_component(component, retval)
         end
         @output.finalize(nil)
@@ -101,9 +109,11 @@ module Simp
         @output.cleanup
         cleanup
       end
+
       def loaded?()
         true
       end
+
       def cleanup()
         @cleanup.each do |path|
           FileUtils.rmtree(path)

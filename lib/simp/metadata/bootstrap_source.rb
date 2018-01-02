@@ -12,10 +12,12 @@ module Simp
       attr_accessor :basename
       attr_accessor :data
       attr_accessor :components
+      attr_accessor :edition
 
-      def initialize()
+      def initialize(edition)
         @releases = {}
         @components = {}
+        @edition = edition
         @data = {
           "components" => {
             "simp-metadata" => {
@@ -47,14 +49,23 @@ module Simp
       end
 
       def release(version)
-        {
-            "simp-metadata" => {
-                "branch" => "master"
-            },
-            "enterprise-metadata" => {
-                "version" => "master",
-          }
-        }
+        case edition
+          when "community"
+            {
+                "simp-metadata" => {
+                    "branch" => "master"
+                }
+            }
+          when "enterprise"
+            {
+                "simp-metadata" => {
+                    "branch" => "master"
+                },
+                "enterprise-metadata" => {
+                    "version" => "master",
+                }
+            }
+        end
       end
       # Stub out 'writing' methods as they don't apply to bootstrap_source
       def create_release(destination, source = 'master')

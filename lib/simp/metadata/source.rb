@@ -15,9 +15,11 @@ module Simp
       attr_accessor :components
       attr_accessor :name
       attr_accessor :write_url
+      attr_accessor :edition
 
       def initialize(args = {})
         @name = args[:name]
+        @edition = args[:edition]
         url = args[:url]
         @write_url = url
         @url = url

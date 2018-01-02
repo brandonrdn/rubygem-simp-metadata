@@ -7,16 +7,16 @@ module Simp
 		class Engine
 			attr_accessor :sources
 
-			def initialize(cachepath = nil, metadatarepos = [ { :name => "simp-metadata", :url => 'https://github.com/simp/simp-metadata'} ])
+			def initialize(cachepath = nil, metadatarepos = [ { :name => "simp-metadata", :url => 'https://github.com/simp/simp-metadata'} ], edition = "community")
 				@sources = []
 				@writable_source = "simp-metadata"
 				priority = 0
 				# XXX ToDo: Make a ticket to replace this with bootstrap_source info. nothing should need to pass metadatarepos into this engine unless they are overriding.
 				metadatarepos.each do |repo|
-					@sources[priority] = Simp::Metadata::Source.new(repo.merge({ cachepath: cachepath}))
+					@sources[priority] = Simp::Metadata::Source.new(repo.merge({ cachepath: cachepath, edition: edition}))
 					priority = priority + 1
 				end
-				@sources << Simp::Metadata::Bootstrap_source.new()
+				@sources << Simp::Metadata::Bootstrap_source.new(edition)
 			end
 
 			def components()
