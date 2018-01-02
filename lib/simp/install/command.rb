@@ -15,19 +15,19 @@ module Simp
           opts.on("-i", "--input [file]", "input filename") do |opt|
             options["input"] = opt
           end
-          opts.on("-t", "--input-type [type]", "input install type") do |opt|
+          opts.on("-t", "--input-type [type]", "input install type", "valid types:", "  - internet", "  - local", "  - tar", "  - iso") do |opt|
             options["input_type"] = opt
           end
-          opts.on("-o", "--output [file]", "output filename") do |opt|
+          opts.on("-o", "--output [file]", "output filename, path, or url (if control_repo type is specified)") do |opt|
             options["output"] = opt
           end
-          opts.on("-T", "--output-type [type]", "output install type") do |opt|
+          opts.on("-T", "--output-type [type]", "output install type", "valid types:", "  - control_repo", "  - local", "  - tar", "  - iso") do |opt|
             options["output_type"] = opt
           end
-          opts.on("-e", "--edition [edition_name]", "SIMP Edition") do |opt|
+          opts.on("-e", "--edition [edition_name]", "SIMP Edition", "valid editions:", "  - community", "  - enterprise") do |opt|
             options["edition"] = opt
           end
-          opts.on("-f", "--flavor [flavor_name]", "SIMP flavor to install") do |opt|
+          opts.on("-f", "--flavor [flavor_name]", "SIMP flavor", "valid flavors:", "  - default") do |opt|
             options["destination_branch"] = opt
           end
           opts.on("-c", "--channel [channel_name]", "Distribution Channel") do |opt|
