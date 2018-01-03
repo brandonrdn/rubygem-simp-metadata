@@ -13,9 +13,15 @@ module Simp
       attr_accessor :data
       attr_accessor :releases
       attr_accessor :components
+      attr_accessor :name
+      attr_accessor :write_url
 
-      def initialize(url, cachepath = nil)
+      def initialize(args = {})
+        @name = args[:name]
+        url = args[:url]
+        @write_url = url
         @url = url
+        cachepath = args[:cachepath]
         uri = URI(url)
         @components = {}
         @releases = {}
@@ -54,7 +60,9 @@ module Simp
         end
         @dirty = false
       end
-
+      def to_s()
+        self.name
+      end
       def release(version)
         if (self.releases.key?(version))
           self.releases[version]
@@ -62,16 +70,50 @@ module Simp
           {}
         end
       end
+      def delete_release(version)
+        if (@releases.key?(version))
+          self.dirty = true
+          @releases.delete(version)
+        end
+      end
+      def create_release(destination, source = 'master')
+        if (@releases.key?(destination))
+          raise "destination version #{destination} already exists"
+        end
+        unless (@releases.key?(source))
+          raise "source version #{source} doesn't exist"
+        end
+        self.dirty = true
+        @releases[destination] = Marshal.load(Marshal.dump(@releases[source]))
+      end
+
       def dirty?()
         @dirty
       end
+
+      def dirty=(value)
+        @dirty = value
+      end
       def save()
         if (self.dirty? == true)
+          puts @load_path
           # XXX ToDo: Write files to yaml, commit and push (where appropriate)
+
+          Simp::Metadata.run("cd #{@load_path} && rm -rf v1")
+          FileUtils.mkdir_p("#{@load_path}/v1/releases")
+          File.open("#{@load_path}/v1/components.yaml", 'w') { |file| file.write({ "components" => @components}.to_yaml) }
+          @releases.each do |releasename, data|
+            File.open("#{@load_path}/v1/releases/#{releasename}.yaml", 'w') { |file| file.write({ "releases" => { "#{releasename}" => data}}.to_yaml) }
+          end
+          Simp::Metadata.run("cd #{@load_path} && git remote add upstream #{write_url}")
+          Simp::Metadata.run("cd #{@load_path} && git remote set-url upstream #{write_url}")
+          Simp::Metadata.run("cd #{@load_path} && git add -A && git commit -m 'Automatically updated via simp-metadata save'; git push upstream master")
+          self.dirty = false
         end
       end
 
       def load_from_dir(path)
+        @load_path = path
         Dir.chdir(path) do
           Dir.glob("**/*.yaml") do |filename|
             begin

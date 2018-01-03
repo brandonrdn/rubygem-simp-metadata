@@ -81,7 +81,7 @@ module Simp
         metadata_components.each do |metadata|
           begin
             result = @input.fetch_component(metadata, { "target" => target})
-            metadatapaths << result["path"]
+            metadatapaths << { :name => metadata, :url => result["path"] }
           rescue Exception => ex
             puts ex
           end

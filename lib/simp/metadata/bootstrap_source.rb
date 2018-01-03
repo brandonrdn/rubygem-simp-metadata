@@ -56,6 +56,10 @@ module Simp
           }
         }
       end
+      # Stub out 'writing' methods as they don't apply to bootstrap_source
+      def create_release(destination, source = 'master')
+
+      end
       def dirty?()
         false
       end
@@ -63,7 +67,12 @@ module Simp
         true
       end
       def cleanup()
-
+      end
+      def to_s()
+        self.name
+      end
+      def name()
+        "bootstrap_metadata"
       end
     end
   end

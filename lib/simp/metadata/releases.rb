@@ -37,6 +37,20 @@ module Simp
       def to_s()
         self.keys.to_s
       end
+      def delete(version)
+        engine.sources.each do |metadata_source|
+          if (metadata_source.name == engine.writable_source)
+            metadata_source.delete_release(version)
+          end
+        end
+      end
+      def create(destination, source = 'master')
+        engine.sources.each do |metadata_source|
+          if (metadata_source.name == engine.writable_source)
+            metadata_source.create_release(destination, source)
+          end
+        end
+      end
     end
   end
 end

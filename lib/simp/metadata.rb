@@ -13,6 +13,7 @@ require 'simp/metadata/component'
 
 require 'simp/metadata/locations'
 require 'simp/metadata/location'
+
 module Simp
   module Metadata
     def self.run(command)
