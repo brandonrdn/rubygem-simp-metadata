@@ -16,7 +16,7 @@ module Simp
       end
 
       def get_from_component()
-        engine.sources.each do |source|
+        engine.sources.each do |name, source|
           if (source.components != nil)
             if (source.components.key?(name))
                 return source.components[name]
@@ -27,7 +27,7 @@ module Simp
 
       def get_from_release()
         retval = {}
-        engine.sources.each do |source|
+        engine.sources.each do |name, source|
           if (source.releases.key?(release_version))
             if (source.releases[release_version].key?(name))
               retval = source.releases[release_version][name]
@@ -138,6 +138,15 @@ module Simp
 
       def branch
         get_from_release["branch"]
+      end
+      def branch=(value)
+        release = engine.writable_source.releases[release_version]
+        if (release != nil)
+          if (release.key?(name))
+            release[name]["branch"] = value
+          end
+        end
+        engine.writable_source.dirty = true
       end
 
       def tag

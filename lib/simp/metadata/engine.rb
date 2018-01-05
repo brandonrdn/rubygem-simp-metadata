@@ -8,15 +8,15 @@ module Simp
 			attr_accessor :sources
 
 			def initialize(cachepath = nil, metadatarepos = [ { :name => "simp-metadata", :url => 'https://github.com/simp/simp-metadata'} ], edition = "community")
-				@sources = []
+				@sources = {}
 				@writable_source = "simp-metadata"
 				priority = 0
 				# XXX ToDo: Make a ticket to replace this with bootstrap_source info. nothing should need to pass metadatarepos into this engine unless they are overriding.
 				metadatarepos.each do |repo|
-					@sources[priority] = Simp::Metadata::Source.new(repo.merge({ cachepath: cachepath, edition: edition}))
-					priority = priority + 1
+					@sources[repo[:name]] = Simp::Metadata::Source.new(repo.merge({ cachepath: cachepath, edition: edition}))
 				end
-				@sources << Simp::Metadata::Bootstrap_source.new(edition)
+				bootstrap_source = Simp::Metadata::Bootstrap_source.new(edition)
+				@sources[bootstrap_source.name] = bootstrap_source
 			end
 
 			def components()
@@ -29,7 +29,7 @@ module Simp
 
 			def dirty?()
 				dirty = false
-				@sources.each do |source|
+				@sources.each do |name, source|
 					if (source.dirty? == true)
 						dirty = true
 					end
@@ -37,23 +37,24 @@ module Simp
 				dirty
 			end
 
-			def writable_source=(source)
+			def writable_source_name=(source)
 				@writable_source = source
 			end
 
-			def writable_source()
+			def writable_source_name()
 				@writable_source
 			end
-      def writable_url(name, url)
-				@sources.each do |source|
-					if (source.name == name)
-						source.write_url = url
-					end
-				end
+
+
+			def writable_source()
+				@sources[@writable_source]
+			end
+      def writable_url(metadata_name, url)
+				@sources[metadata_name].write_url = url
 			end
 			def save()
 				Simp::Metadata.debug2("Saving metadata")
-				@sources.each do |source|
+				@sources.each do |name, source|
 					if (source.dirty? == true)
 						Simp::Metadata.debug1("#{source} - dirty, saving")
 						source.save
@@ -64,7 +65,7 @@ module Simp
 			end
 
 			def cleanup()
-				@sources.each do |source|
+				@sources.each do |name, source|
 					source.cleanup
 				end
 			end

@@ -13,7 +13,7 @@ module Simp
             engine = Simp::Metadata::Engine.new()
             Simp::Metadata.warning("'set-write' subcommand is only useful in scripts!")
           end
-          engine.writable_source = argv[0]
+          engine.writable_source_name = argv[0]
         end
       end
     end

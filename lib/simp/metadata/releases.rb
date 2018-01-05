@@ -22,7 +22,7 @@ module Simp
 
       def keys()
         result = {}
-        engine.sources.each do |source|
+        engine.sources.each do |name, source|
           source.releases.keys.each do |name|
             result[name] = true
           end
@@ -38,18 +38,10 @@ module Simp
         self.keys.to_s
       end
       def delete(version)
-        engine.sources.each do |metadata_source|
-          if (metadata_source.name == engine.writable_source)
-            metadata_source.delete_release(version)
-          end
-        end
+        engine.writable_source.delete_release(version)
       end
       def create(destination, source = 'master')
-        engine.sources.each do |metadata_source|
-          if (metadata_source.name == engine.writable_source)
-            metadata_source.create_release(destination, source)
-          end
-        end
+        engine.writable_source.create_release(destination, source)
       end
     end
   end

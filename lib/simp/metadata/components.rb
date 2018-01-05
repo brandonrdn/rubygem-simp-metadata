@@ -33,13 +33,13 @@ module Simp
       def keys()
         result = {}
         if (version == nil)
-          engine.sources.each do |source|
+          engine.sources.each do |name, source|
             source.components.keys.each do |name|
               result[name] = true
             end
           end
         else
-          engine.sources.each do |source|
+          engine.sources.each do |name, source|
             if (source.releases.key?(version))
               source.releases[version].each do |component, data|
                   result[component] = true
