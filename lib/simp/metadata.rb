@@ -55,7 +55,7 @@ module Simp
     end
     def self.print_message(prefix, message)
       message.split("\n").each do |line|
-        puts "#{prefix}: #{line}"
+        STDERR.puts "#{prefix}: #{line}"
       end
     end
     def self.debug1(message)
