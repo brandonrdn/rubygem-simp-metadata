@@ -144,6 +144,8 @@ module Simp
         if (release != nil)
           if (release.key?(name))
             release[name]["branch"] = value
+          else
+            release[name] = {"branch" => value}
           end
         end
         engine.writable_source.dirty = true

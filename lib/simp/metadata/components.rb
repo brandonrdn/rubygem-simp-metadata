@@ -30,6 +30,10 @@ module Simp
         Simp::Metadata::Component.new(engine, index, version)
       end
 
+      def key?(name)
+        self.keys.include?(name)
+      end
+
       def keys()
         result = {}
         if (version == nil)
@@ -52,6 +56,13 @@ module Simp
           end
         end
         result.keys
+      end
+
+      def create(name, settings = {})
+        unless (self.key?(name))
+          engine.writable_source.components[name] = settings
+          engine.writable_source.dirty = true
+        end
       end
     end
   end

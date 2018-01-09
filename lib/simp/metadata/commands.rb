@@ -8,6 +8,8 @@ require 'simp/metadata/commands/set-write'
 require 'simp/metadata/commands/delete'
 require 'simp/metadata/commands/set-write-url'
 require 'simp/metadata/commands/update'
+require 'simp/metadata/commands/component'
+require 'simp/metadata/commands/pry'
 
 module Simp
   module Metadata

@@ -24,9 +24,11 @@ module Simp
           lines.each do |line|
             temp_argv = line.split(" ")
             unless (temp_argv.size == 0)
-              command = Module.const_get("Simp::Metadata::Commands::#{temp_argv[0].gsub("-","_").capitalize}").new()
-              temp_argv.shift
-              command.run(temp_argv, engine)
+              unless (temp_argv[0] =~ /^#/)
+                command = Module.const_get("Simp::Metadata::Commands::#{temp_argv[0].gsub("-","_").capitalize}").new()
+                temp_argv.shift
+                command.run(temp_argv, engine)
+              end
             end
           end
         end

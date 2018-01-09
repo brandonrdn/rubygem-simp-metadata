@@ -12,15 +12,17 @@ module Simp
           if (command == "-h" || command == "help")
             self.help()
           else
-            begin
-              cmd = Module.const_get("Simp::Metadata::Commands::#{command.gsub("-", "_").capitalize}").new()
+            unless (command =~ /^#/)
+              begin
+                cmd = Module.const_get("Simp::Metadata::Commands::#{command.gsub("-", "_").capitalize}").new()
 
-            rescue
-              Simp::Metadata.critical("Unable to find command: #{command}")
-              self.help
-              exit 4
+              rescue
+                Simp::Metadata.critical("Unable to find command: #{command}")
+                self.help
+                exit 4
+              end
+              cmd.run(argv)
             end
-            cmd.run(argv)
           end
         else
           self.help()
