@@ -18,8 +18,8 @@ module Simp
       def get_from_component()
         engine.sources.each do |name, source|
           if (source.components != nil)
-            if (source.components.key?(name))
-                return source.components[name]
+            if (source.components.key?(self.name))
+                return source.components[self.name]
             end
           end
         end
@@ -29,12 +29,12 @@ module Simp
         retval = {}
         engine.sources.each do |name, source|
           if (source.releases.key?(release_version))
-            if (source.releases[release_version].key?(name))
-              retval = source.releases[release_version][name]
+            if (source.releases[release_version].key?(self.name))
+              retval = source.releases[release_version][self.name]
             end
           else
-            if (source.release(release_version).key?(name))
-              retval = source.release(release_version)[name]
+            if (source.release(release_version).key?(self.name))
+              retval = source.release(release_version)[self.name]
             end
           end
         end
@@ -157,9 +157,10 @@ module Simp
 
       def version
         ver = ""
-        ["version", "ref", "branch"].each do |item|
+        ["version", "tag", "ref", "branch"].each do |item|
           if (get_from_release[item] != nil)
             ver = get_from_release[item]
+            break
           end
         end
         return ver
