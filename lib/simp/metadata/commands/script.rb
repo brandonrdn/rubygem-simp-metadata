@@ -12,6 +12,7 @@ module Simp
               $simp_metadata_debug_level = opt
             end.parse!(argv)
           end
+          $commandqueue = Queue.new();
           if (engine == nil)
             engine = Simp::Metadata::Engine.new()
           end
@@ -25,6 +26,7 @@ module Simp
             temp_argv = line.split(" ")
             unless (temp_argv.size == 0)
               unless (temp_argv[0] =~ /^#/)
+                $commandqueue.push(line);
                 command = Module.const_get("Simp::Metadata::Commands::#{temp_argv[0].gsub("-","_").capitalize}").new()
                 temp_argv.shift
                 command.run(temp_argv, engine)

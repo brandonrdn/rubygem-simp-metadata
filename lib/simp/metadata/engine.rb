@@ -52,12 +52,12 @@ module Simp
       def writable_url(metadata_name, url)
 				@sources[metadata_name].write_url = url
 			end
-			def save()
+			def save(message = "Auto-saving using simp-metadata")
 				Simp::Metadata.debug2("Saving metadata")
 				@sources.each do |name, source|
 					if (source.dirty? == true)
 						Simp::Metadata.debug1("#{source} - dirty, saving")
-						source.save
+						source.save(message)
 					else
 						Simp::Metadata.debug1("#{source} - clean, not saving")
 					end

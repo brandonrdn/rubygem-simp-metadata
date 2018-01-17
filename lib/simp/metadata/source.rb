@@ -96,7 +96,7 @@ module Simp
       def dirty=(value)
         @dirty = value
       end
-      def save()
+      def save(message = "Auto-saving using simp-metadata")
         if (self.dirty? == true)
           puts @load_path
           # XXX ToDo: Write files to yaml, commit and push (where appropriate)
@@ -109,7 +109,7 @@ module Simp
           end
           Simp::Metadata.run("cd #{@load_path} && git remote add upstream #{write_url}")
           Simp::Metadata.run("cd #{@load_path} && git remote set-url upstream #{write_url}")
-          Simp::Metadata.run("cd #{@load_path} && git add -A && git commit -m 'Automatically updated via simp-metadata save'; git push upstream master")
+          Simp::Metadata.run("cd #{@load_path} && git add -A && git commit -m '#{message}'; git push upstream master")
           self.dirty = false
         end
       end
