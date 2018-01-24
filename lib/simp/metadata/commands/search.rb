@@ -5,7 +5,7 @@ module Simp
         def run(argv, engine = nil)
 
           OptionParser.new do |opts|
-            opts.banner = "Usage: simp-metadata clone source_release target_release"
+            opts.banner = "Usage: simp-metadata search url=http(s)://*"
             opts.on("-d", "--debug [level]", "debug logging level: critical, error, warning, info, debug1, debug2") do |opt|
               $simp_metadata_debug_level = opt
             end.parse!(argv)
@@ -29,9 +29,8 @@ module Simp
             end
             if (data != {})
               engine.components.each do |component|
-                matches = component if component.primary.url == data["url"]
-                if not matches.nil?
-                puts matches
+                if component.primary.url == data["url"]
+                  puts component.name
                 end
               end
             end
