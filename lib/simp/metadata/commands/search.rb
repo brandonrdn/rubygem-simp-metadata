@@ -1,3 +1,5 @@
+require 'cgi'
+
 module Simp
   module Metadata
     module Commands
@@ -29,7 +31,7 @@ module Simp
             end
             if (data != {})
               engine.components.each do |component|
-                if component.primary.url == data["url"]
+                if component.primary.url == data["url"] or component.primary.url == CGI.unescape(data["url"])
                   puts component.name
                 end
               end
