@@ -62,6 +62,20 @@ module Simp
         end
       end
 
+      def keys()
+        ["component_type","authoritative","asset_name","extension","format","module_name","type"]
+      end
+
+      def [] (index)
+        self.send index.to_sym
+      end
+
+      def each(&block)
+        self.keys.each do |key|
+          yield key, self[key]
+        end
+      end
+
       def real_extension
         get_from_component["extension"]
       end
@@ -129,6 +143,10 @@ module Simp
       end
 
       def authoritative?
+        get_from_component["authoritative"]
+      end
+
+      def authoritative
         get_from_component["authoritative"]
       end
 

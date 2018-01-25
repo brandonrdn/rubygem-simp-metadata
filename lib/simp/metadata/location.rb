@@ -12,11 +12,29 @@ module Simp
         @component = component
       end
 
+      def to_s
+        self.url
+      end
+
       def primary
         if (location.key?("primary"))
           location["primary"]
         else
           false
+        end
+      end
+
+      def keys()
+        ["extract","primary","method","type","url"]
+      end
+
+      def [] (index)
+        self.send index.to_sym
+      end
+
+      def each(&block)
+        self.keys.each do |key|
+          yield key, self[key]
         end
       end
 

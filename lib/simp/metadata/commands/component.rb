@@ -24,7 +24,7 @@ module Simp
               when "create"
                 component = argv[1]
                 argv.shift
-                data = { "locations" => [{ "primary" => true}]}
+                data = {"locations" => [{"primary" => true}]}
                 argv.each do |argument|
                   splitted = argument.split("=")
                   name = splitted[0]
@@ -52,12 +52,32 @@ module Simp
                   Simp::Metadata.critical("#{setting} is not a valid setting")
                   exit 7
                 end
-
                 begin
                   object.send("#{setting}=".to_sym, value)
                 rescue NoMethodError => ex
                   Simp::Metadata.critical("#{setting} is a read-only setting")
                   exit 6
+                end
+              when "view"
+                component = argv[1]
+                attribute = argv[2]
+                comp = engine.components[component]
+                if attribute.nil?
+                  comp.each do |key,value|
+                    unless value.nil? or value == ""
+                    puts "#{key}: #{value}"
+                    end
+                  end
+                  puts "location:"
+                  comp.locations.each do |location|
+                    location.each do |key, value|
+                      unless value.nil?
+                        puts "  #{key}: #{value}"
+                      end
+                    end
+                  end
+                else
+                  puts comp[attribute]
                 end
             end
 
