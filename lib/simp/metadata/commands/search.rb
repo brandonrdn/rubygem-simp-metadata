@@ -7,7 +7,7 @@ module Simp
         def run(argv, engine = nil)
 
           OptionParser.new do |opts|
-            opts.banner = "Usage: simp-metadata search url=http(s)://*"
+            opts.banner = "Usage: simp-metadata search attribute=value (supports multiple params as well as encoded urls)"
             opts.on("-d", "--debug [level]", "debug logging level: critical, error, warning, info, debug1, debug2") do |opt|
               $simp_metadata_debug_level = opt
             end.parse!(argv)
@@ -25,16 +25,24 @@ module Simp
               name = splitted[0]
               value = splitted[1]
               case name
-                when "url"
-                  data["url"] = value
+                when name
+                  data[name] = value
               end
             end
-            if (data != {})
+            unless (data == {}) or data.nil?
+              data.each do |key, value|
+                if value == "" or value.nil?
+                  puts "No value specified for #{key}"
+                  exit
+                end
+              end
               engine.components.each do |component|
-                if component.primary.url == data["url"] or component.primary.url == CGI.unescape(data["url"])
+                if data.all? {|key, value| component[key] == value or component[key] == CGI.unescape(value)}
                   puts component.name
                 end
               end
+            else
+              puts "No search parameters specified"
             end
             if (root == true)
               engine.save
@@ -48,3 +56,4 @@ module Simp
     end
   end
 end
+

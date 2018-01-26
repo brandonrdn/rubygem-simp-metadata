@@ -19,7 +19,7 @@ module Simp
         engine.sources.each do |name, source|
           if (source.components != nil)
             if (source.components.key?(self.name))
-                return source.components[self.name]
+              return source.components[self.name]
             end
           end
         end
@@ -47,23 +47,23 @@ module Simp
 
       def extension
         if (self.real_extension == nil)
-        case (self.component_type)
-          when "logstash-filter"
-            "gem"
-          when "rubygem"
-            "gem"
-          when "grafana-plugin"
-            "zip"
-          else
-            ""
-        end
+          case (self.component_type)
+            when "logstash-filter"
+              "gem"
+            when "rubygem"
+              "gem"
+            when "grafana-plugin"
+              "zip"
+            else
+              ""
+          end
         else
           self.real_extension
         end
       end
 
       def keys()
-        ["component_type","authoritative","asset_name","extension","format","module_name","type"]
+        ["component_type", "authoritative", "asset_name", "extension", "format", "module_name", "type", "url", "method", "extract"]
       end
 
       def [] (index)
@@ -122,13 +122,25 @@ module Simp
       end
 
       def primary
-        self.locations.primary
+        self.locations.primary.primary
+      end
+
+      def url
+        self.locations.primary.url
+      end
+
+      def method
+        self.locations.primary.method
+      end
+
+      def extract
+        self.locations.primary.extract
       end
 
       def locations
         # XXX: ToDo Allow manifest.yaml to override locations
         # XXX: ToDo Use primary_source and mirrors here if locations is empty
-        Simp::Metadata::Locations.new({ "locations" => get_from_component["locations"], "primary_source" => get_from_component["primary_source"], "mirrors" => get_from_component["mirrors"]}, self)
+        Simp::Metadata::Locations.new({"locations" => get_from_component["locations"], "primary_source" => get_from_component["primary_source"], "mirrors" => get_from_component["mirrors"]}, self)
       end
 
       # XXX: ToDo Generate a filename, and output file type; ie, directory or file
@@ -157,6 +169,7 @@ module Simp
       def branch
         get_from_release["branch"]
       end
+
       def branch=(value)
         release = engine.writable_source.releases[release_version]
         if (release != nil)
