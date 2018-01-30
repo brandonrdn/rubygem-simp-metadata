@@ -166,6 +166,18 @@ module Simp
         get_from_release["ref"]
       end
 
+      def ref=(value)
+        release = engine.writable_source.releases[release_version]
+        if (release != nil)
+          if (release.key?(name))
+            release[name]["ref"] = value
+          else
+            release[name] = {"ref" => value}
+          end
+        end
+        engine.writable_source.dirty = true
+      end
+
       def branch
         get_from_release["branch"]
       end
@@ -186,6 +198,17 @@ module Simp
         get_from_release["tag"]
       end
 
+      def tag=(value)
+        release = engine.writable_source.releases[release_version]
+        if (release != nil)
+          if (release.key?(name))
+            release[name]["tag"] = value
+          else
+            release[name] = {"tag" => value}
+          end
+        end
+        engine.writable_source.dirty = true
+      end
       def version
         ver = ""
         ["version", "tag", "ref", "branch"].each do |item|
