@@ -1,3 +1,3 @@
 #! /bin/sh
 
-ssh -i "${SSH_KEYFILE}" "$@"
+ssh -i "${SSH_KEYFILE}" -o StrictHostKeyChecking=no "$@"
