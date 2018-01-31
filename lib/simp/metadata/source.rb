@@ -16,6 +16,7 @@ module Simp
       attr_accessor :name
       attr_accessor :write_url
       attr_accessor :edition
+      attr_accessor :engine
 
       def initialize(args = {})
         @name = args[:name]
@@ -30,6 +31,7 @@ module Simp
         @data = {}
         @releases = {}
         @components = {}
+        @engine = args[:engine]
         @cleanup = []
         if (uri.scheme == "file" or uri.scheme == nil)
           load_from_dir(uri.path)
@@ -100,6 +102,11 @@ module Simp
         if (self.dirty? == true)
           puts @load_path
           # XXX ToDo: Write files to yaml, commit and push (where appropriate)
+
+          if (engine.ssh_key != nil)
+            ENV['GIT_SSH'] = "#{File.dirname(__FILE__)}/git_ssh_wrapper.sh"
+            ENV['SSH_KEYFILE'] = "#{engine.ssh_key}"
+            end
 
           Simp::Metadata.run("cd #{@load_path} && rm -rf v1")
           FileUtils.mkdir_p("#{@load_path}/v1/releases")

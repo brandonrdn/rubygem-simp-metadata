@@ -31,6 +31,9 @@ module Simp
               comp, url = writable_url.split(',')
               engine.writable_url(comp, url)
             end
+            if (ssh_key != nil)
+              engine.ssh_key = File.expand_path(ssh_key)
+            end
           else
             root = false
           end
