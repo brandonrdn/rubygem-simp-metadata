@@ -4,7 +4,9 @@ module Simp
       class Update
         def run(argv, engine = nil)
           release = nil
-          OptionParser.new do |opts|
+          writable_url = nil
+          ssh_key = nil
+          options = OptionParser.new do |opts|
 
             opts.banner = "Usage: simp-metadata clone source_release target_release"
             opts.on("-d", "--debug [level]", "debug logging level: critical, error, warning, info, debug1, debug2") do |opt|
@@ -13,11 +15,22 @@ module Simp
             opts.on("-v", "--version [release]", "release version") do |opt|
               release = opt
             end
-          end.parse!(argv)
+            opts.on("-i", "--identity [ssh_key_file]", "specify ssh_key to be used") do |opt|
+              ssh_key = opt
+            end
+            opts.on("-w", "--writable-url [component,url]", "writable component,url") do |opt|
+              writable_url = opt
+            end
+          end
+          options.parse!(argv)
 
           if (engine == nil)
             root = true
             engine = Simp::Metadata::Engine.new()
+            if (writable_url != nil)
+              comp, url = writable_url.split(',')
+              engine.writable_url(comp, url)
+            end
           else
             root = false
           end
@@ -36,7 +49,7 @@ module Simp
             end
 
             begin
-            object.send("#{setting}=".to_sym, value)
+              object.send("#{setting}=".to_sym, value)
             rescue NoMethodError => ex
               Simp::Metadata.critical("#{setting} is a read-only setting")
               exit 6

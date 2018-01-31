@@ -109,7 +109,11 @@ module Simp
           end
           Simp::Metadata.run("cd #{@load_path} && git remote add upstream #{write_url}")
           Simp::Metadata.run("cd #{@load_path} && git remote set-url upstream #{write_url}")
-          Simp::Metadata.run("cd #{@load_path} && git add -A && git commit -m '#{message}'; git push upstream master")
+          exitcode = Simp::Metadata.run("cd #{@load_path} && git add -A && git commit -m '#{message}'; git push upstream master")
+          if (exitcode != 0)
+            Simp::Metadata.critical("error committing changes")
+            raise "#{exitcode}"
+          end
           self.dirty = false
         end
       end
