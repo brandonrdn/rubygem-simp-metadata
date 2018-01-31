@@ -120,6 +120,8 @@ module Simp
           if (exitcode != 0)
             Simp::Metadata.critical("error committing changes")
             raise "#{exitcode}"
+          else
+            puts "Successfully updated #{name}"
           end
           self.dirty = false
         end
