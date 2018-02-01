@@ -122,7 +122,7 @@ module Simp
       end
 
       def primary
-        self.locations.primary.primary
+        self.locations.primary
       end
 
       def url
