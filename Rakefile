@@ -8,7 +8,6 @@ require 'rubygems'
 require 'rake'
 require 'rake/clean'
 require 'rubygems/package_task'
-require 'rdoc/task'
 require 'rake/testtask'
 require 'rspec/core/rake_task'
 

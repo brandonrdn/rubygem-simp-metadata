@@ -18,33 +18,53 @@ module Simp
         @releases = {}
         @components = {}
         @edition = edition
-        @data = {
-          "components" => {
-            "simp-metadata" => {
-              "component-type" => "simp-metadata",
-              "authoritative" => true,
-              "locations" => [
-                {
-                  "url" => "https://github.com/simp/simp-metadata",
-                  "method" => "git",
-                  "primary" => true,
+
+        case edition
+          when "community"
+            @data = {
+                "components" => {
+                    "simp-metadata" => {
+                        "component-type" => "simp-metadata",
+                        "authoritative" => true,
+                        "locations" => [
+                            {
+                                "url" => "https://github.com/simp/simp-metadata",
+                                "method" => "git",
+                                "primary" => true,
+                            }
+                        ],
+                    }
                 }
-              ],
-            },
-            "enterprise-metadata" => {
-              "component-type" => "simp-metadata",
-              "authoritative" => true,
-              "locations" => [
-                {
-                  "url" => "simp-enterprise:///enterprise-metadata?version=master&filetype=tgz",
-                  "method" => "file",
-                  "extract" => true,
-                  "primary" => true,
-                }
-              ]
             }
-          }
-        }
+          when "enterprise"
+            @data = {
+                "components" => {
+                    "simp-metadata" => {
+                        "component-type" => "simp-metadata",
+                        "authoritative" => true,
+                        "locations" => [
+                            {
+                                "url" => "https://github.com/simp/simp-metadata",
+                                "method" => "git",
+                                "primary" => true,
+                            }
+                        ],
+                    },
+                    "enterprise-metadata" => {
+                        "component-type" => "simp-metadata",
+                        "authoritative" => true,
+                        "locations" => [
+                            {
+                                "url" => "simp-enterprise:///enterprise-metadata?version=master&filetype=tgz",
+                                "method" => "file",
+                                "extract" => true,
+                                "primary" => true,
+                            }
+                        ]
+                    }
+                }
+            }
+        end
         @components = @data['components']
       end
 

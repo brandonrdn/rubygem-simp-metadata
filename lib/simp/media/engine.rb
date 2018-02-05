@@ -55,6 +55,12 @@ module Simp
         end
         @cleanup = []
         @options = options
+        if (options["input_type"] == nil)
+          raise "input_type must be specified"
+        end
+        if (options["output_type"] == nil)
+          raise "output_type must be specified"
+        end
         @input = Module.const_get("Simp::Media::Type::#{@options["input_type"].capitalize}").new(options, self)
         @output = Module.const_get("Simp::Media::Type::#{@options["output_type"].capitalize}").new(options, self)
       end
@@ -91,7 +97,7 @@ module Simp
             metadatapaths << { :name => metadata, :url => result["path"] }
           rescue Exception => ex
             Simp::Metadata.critical("cannot install #{@options["edition"]} edition, unable to download #{metadata}")
-            exit 2
+            raise "cannot install #{@options["edition"]} edition, unable to download #{metadata}"
           end
         end
 
@@ -100,7 +106,8 @@ module Simp
         end
         # XXX ToDo: Bring the engine creation up higher in the file since we now have bootstrap metadata
         metadata = Simp::Metadata::Engine.new(nil, metadatapaths, @options["edition"])
-        metadata.releases[@options["version"]].components.each do |component|
+        version = @options["version"]
+        metadata.releases[version].components.each do |component|
           retval = @input.fetch_component(component, {})
           @output.add_component(component, retval)
         end

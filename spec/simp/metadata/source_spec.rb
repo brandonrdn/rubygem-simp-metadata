@@ -4,7 +4,6 @@ describe Simp::Metadata::Source do
   it "should require a URL to be specified" do
     expect {
       source = Simp::Metadata::Source.new()
-      source = nil
     }.to raise_error(ArgumentError)
   end
   # it "should instantiate when passed a valid metadata source" do
