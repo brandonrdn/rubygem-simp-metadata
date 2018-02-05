@@ -7,16 +7,26 @@ module Simp
     class Engine
       attr_accessor :sources
 
-      def initialize(cachepath = nil, metadatarepos = [{:name => "simp-metadata", :url => 'https://github.com/simp/simp-metadata'}], edition = "community")
+      def initialize(cachepath = nil, metadatarepos = nil, edition = "community")
         @sources = {}
         @writable_source = "simp-metadata"
         priority = 0
-        # XXX ToDo: Make a ticket to replace this with bootstrap_source info. nothing should need to pass metadatarepos into this engine unless they are overriding.
-        metadatarepos.each do |repo|
-          @sources[repo[:name]] = Simp::Metadata::Source.new(repo.merge({cachepath: cachepath, edition: edition, engine: self}))
-        end
         bootstrap_source = Simp::Metadata::Bootstrap_source.new(edition)
+        if (metadatarepos)
+          metadatarepos.each do |reponame, url|
+            # XXX: ToDo replace with better logic once Simp::Metadata.download_component gets refactored.
+            # MUCH LAYERING VIOLATIONS
+            bootstrap_source.components[reponame]["locations"][0]["url"] = url
+            bootstrap_source.components[reponame]["locations"][0]["method"] = "git"
+            bootstrap_source.components[reponame]["locations"][0]["extract"] = false
+
+          end
+        end
         @sources[bootstrap_source.name] = bootstrap_source
+        self.components.keys.each do |key|
+          component = self.components[key]
+          @sources[key] = Simp::Metadata::Source.new({:name => key, :component => component}.merge({cachepath: cachepath, edition: edition, engine: self}))
+        end
       end
 
       def components()

@@ -14,58 +14,69 @@ module Simp
       attr_accessor :releases
       attr_accessor :components
       attr_accessor :name
-      attr_accessor :write_url
       attr_accessor :edition
       attr_accessor :engine
 
-      def initialize(args = {})
+      def initialize(args)
+        unless (args.key?(:engine))
+          raise ":engine must be specified when initializing a metadata source"
+        end
+        unless (args.key?(:name))
+          raise ":name must be specified when initializing a metadata source"
+        end
+        unless (args.key?(:component))
+          raise ":component must be specified when initializing a metadata source"
+        end
+        unless (args.key?(:edition))
+          raise ":edition must be specified when initializing a metadata source"
+        end
+
+        @engine = args[:engine]
         @name = args[:name]
+        @component = args[:component]
         @edition = args[:edition]
-        url = args[:url]
-        @write_url = url
-        @url = url
+
+        if (args[:url])
+          @url = args[:url]
+        else
+          @url = @component.primary.url
+        end
+        @write_url = @url
         cachepath = args[:cachepath]
-        uri = URI(url)
         @components = {}
         @releases = {}
         @data = {}
-        @releases = {}
-        @components = {}
-        @engine = args[:engine]
         @cleanup = []
-        if (uri.scheme == "file" or uri.scheme == nil)
-          load_from_dir(uri.path)
+
+        if (cachepath == nil)
+          @cachepath = Dir.mktmpdir("cachedir")
+          @cleanup << @cachepath
         else
-          if (cachepath == nil)
-            @cachepath = Dir.mktmpdir("cachedir")
-            @cleanup << @cachepath
-          else
-            @cachepath = File.absolute_path(cachepath);
-          end
-          @basename = File.basename(url, File.extname(url))
-          Dir.chdir(@cachepath) do
-            unless (Dir.exists?(@cachepath + "/" + basename))
-              Simp::Metadata.run("git clone #{url} #{basename}")
-            else
-              Dir.chdir(@cachepath + "/" + @basename) do
-                begin
-                  Simp::Metadata.run("git pull origin")
-                end
-              end
-            end
-            load_from_dir(@cachepath + "/" + @basename)
-          end
+          @cachepath = File.absolute_path(cachepath);
         end
-        unless @data['releases'] == nil
-          @releases = @data['releases']
-        end
-        unless @data['components'] == nil
-          @components = @data['components']
-        end
+        retval = Simp::Metadata.download_component(@component, {"target" => @cachepath})
+        load_from_dir(retval["path"])
+
         @dirty = false
       end
+
       def to_s()
         self.name
+      end
+
+      def writable?()
+        true
+      end
+      def write_url
+        @write_url
+      end
+      def write_url=(value)
+        if (value != @url)
+          @write_url = value
+          FileUtils.rm_r("#{@cachepath}/#{@component.name}")
+          retval = Simp::Metadata.download_component(@component, {"target" => @cachepath, "url" => value})
+          load_from_dir(retval["path"])
+        end
       end
       def release(version)
         if (self.releases.key?(version))
@@ -74,12 +85,14 @@ module Simp
           {}
         end
       end
+
       def delete_release(version)
         if (@releases.key?(version))
           self.dirty = true
           @releases.delete(version)
         end
       end
+
       def create_release(destination, source = 'master')
         if (@releases.key?(destination))
           raise "destination version #{destination} already exists"
@@ -98,6 +111,7 @@ module Simp
       def dirty=(value)
         @dirty = value
       end
+
       def save(message = "Auto-saving using simp-metadata")
         if (self.dirty? == true)
           puts @load_path
@@ -106,13 +120,35 @@ module Simp
           if (engine.ssh_key != nil)
             ENV['GIT_SSH'] = "#{File.dirname(__FILE__)}/git_ssh_wrapper.sh"
             ENV['SSH_KEYFILE'] = "#{engine.ssh_key}"
-            end
+          end
 
           Simp::Metadata.run("cd #{@load_path} && rm -rf v1")
-          FileUtils.mkdir_p("#{@load_path}/v1/releases")
-          File.open("#{@load_path}/v1/components.yaml", 'w') { |file| file.write({ "components" => @components}.to_yaml) }
+          FileUtils.mkdir_p("#{@load_path}/v1")
+          File.open("#{@load_path}/v1/components.yaml", 'w') {|file| file.write({"components" => @components}.to_yaml)}
           @releases.each do |releasename, data|
-            File.open("#{@load_path}/v1/releases/#{releasename}.yaml", 'w') { |file| file.write({ "releases" => { "#{releasename}" => data}}.to_yaml) }
+            directory = "releases"
+            case releasename
+              when /.*-[Aa][Ll][Pp][Hh][Aa].*/
+                directory = "prereleases"
+              when /.*-[Bb][Ee][Tt][Aa].*/
+                directory = "prereleases"
+              when /.*-[Rr][Cc].*/
+                directory = "prereleases"
+              when /^nightly\-/
+                directory = "nightlies"
+              when /develop/
+                directory = "channels"
+              when /master/
+                directory = "channels"
+              when "test-stub"
+                directory = "unit"
+              when /^test\-/
+                directory = "tests"
+              else
+                directory = "releases"
+            end
+            FileUtils.mkdir_p("#{@load_path}/v1/#{directory}")
+            File.open("#{@load_path}/v1/#{directory}/#{releasename}.yaml", 'w') {|file| file.write({"releases" => {"#{releasename}" => data}}.to_yaml)}
           end
           Simp::Metadata.run("cd #{@load_path} && git remote add upstream #{write_url}")
           Simp::Metadata.run("cd #{@load_path} && git remote set-url upstream #{write_url}")
@@ -137,6 +173,12 @@ module Simp
             end
           end
         end
+        unless @data['releases'] == nil
+          @releases = @data['releases']
+        end
+        unless @data['components'] == nil
+          @components = @data['components']
+        end
       end
 
       def deep_merge(target_hash, source_hash)
@@ -153,6 +195,7 @@ module Simp
         end
         target_hash
       end
+
       def cleanup()
         @cleanup.each do |path|
           FileUtils.rmtree(path)

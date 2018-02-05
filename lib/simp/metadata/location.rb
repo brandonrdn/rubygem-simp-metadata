@@ -6,6 +6,7 @@ module Simp
       attr_accessor :locationinfo
       attr_accessor :location
       attr_accessor :component
+
       def initialize(locationinfo, location, component)
         @locationinfo = locationinfo
         @location = location
@@ -25,7 +26,7 @@ module Simp
       end
 
       def keys()
-        ["extract","primary","method","type","url"]
+        ["extract", "primary", "method", "type", "url"]
       end
 
       def [] (index)
@@ -46,18 +47,26 @@ module Simp
         end
       end
 
+      def method=(value)
+        @local_method = value
+      end
+
       def method
-        if (location.key?("type"))
-          if (location["type"] == "git")
-            method = "git"
-          else
-            method = "file"
-          end
+        if (@local_method)
+          @local_method
         else
-          if (location.key?("method"))
-            location["method"]
+          if (location.key?("type"))
+            if (location["type"] == "git")
+              method = "git"
+            else
+              method = "file"
+            end
           else
-           method = "file"
+            if (location.key?("method"))
+              location["method"]
+            else
+              method = "file"
+            end
           end
         end
       end
@@ -66,10 +75,17 @@ module Simp
         location["binary"]
       end
 
+      def url=(value)
+        @local_url = value
+      end
+
       def url
-        base = self.real_url
-        uri = URI(base)
-        if (uri.scheme == "simp-enterprise")
+        if (@local_url)
+          @local_url
+        else
+          base = self.real_url
+          uri = Simp::Metadata.uri(base)
+          if (uri.scheme == "simp-enterprise")
             if (uri.query.class == String)
               query_elements = uri.query.split("&")
               newquery = []
@@ -102,16 +118,18 @@ module Simp
               uri.query = newquery.join("&")
             end
             uri.to_s
-        else
-          case component.component_type
-            when "rubygems"
-              if (base =~ /.*\.gem/)
-              else
-                "#{base}/#{component.asset_name}-#{component.version}.gem"
-              end
+          else
+            case component.component_type
+              when "rubygems"
+                if (base =~ /.*\.gem/)
+                else
+                  "#{base}/#{component.asset_name}-#{component.version}.gem"
+                end
+            end
+            base
           end
-          base
         end
+
       end
 
       def real_url

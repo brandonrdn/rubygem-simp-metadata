@@ -91,6 +91,9 @@ module Simp
       def create_release(destination, source = 'master')
 
       end
+      def writable?()
+        false
+      end
       def dirty?()
         false
       end

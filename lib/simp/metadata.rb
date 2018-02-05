@@ -7,6 +7,7 @@ require 'uri'
 require 'openssl'
 require 'json'
 require 'simp/metadata/engine'
+require 'simp/metadata/fake_uri'
 
 require 'simp/metadata/source'
 require 'simp/metadata/bootstrap_source'
@@ -36,6 +37,8 @@ module Simp
           "#{basedir}/#{component.output_filename}"
       end
     end
+    # XXX: ToDo this entire logic stream is crappy.
+    #      We need to replace this with a much more simplified version.
     def self.download_component(component, options)
       directory_name = self.directory_name(component, options)
       retval = {}
@@ -69,22 +72,41 @@ module Simp
           end
         when "Simp::Metadata::Component"
           retval["path"] = directory_name
-          fetch_from_url(component.primary, retval["path"], component, options)
+          if (options["url"])
+            location = component.primary
+            location.url = options["url"]
+            urlspec = location
+            location.method = "git"
+          else
+            urlspec = component.primary
+          end
+          fetch_from_url(urlspec, retval["path"], component, options)
         else
           raise "component.class=#{component.class.to_s}, #{component.class.to_s} is not in ['String', 'Simp::Metadata::Component']"
       end
       return retval
     end
 
+    def self.uri(url)
+      case url
+        when /git@/
+          uri = Simp::Metadata::FakeURI.new(uri)
+          uri.scheme = "ssh"
+          uri
+        else
+          URI(url)
+      end
+    end
+
     def self.fetch_from_url(urlspec, target, component = nil, options)
       case urlspec.class.to_s
         when "Simp::Metadata::Location"
           url = urlspec.url
-          uri = URI(url)
+          uri = uri(url)
           method = urlspec.method
         when "Hash"
           url = urlspec["url"]
-          uri = URI(urlspec["url"])
+          uri = uri(urlspec["url"])
           if (urlspec.key?("method"))
             method = urlspec["method"]
           else
@@ -101,7 +123,7 @@ module Simp
           end
         when "String"
           url = urlspec
-          uri = URI(urlspec)
+          uri = uri(urlspec)
           method = "file"
       end
       case method
@@ -159,7 +181,7 @@ module Simp
       else
         extract = false
       end
-      uri = URI(url)
+      uri = uri(url)
       case uri.scheme
         when "simp-enterprise"
           scheme = "https"
