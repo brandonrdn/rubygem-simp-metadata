@@ -7,8 +7,12 @@ module Simp
     class Engine
       attr_accessor :sources
 
-      def initialize(cachepath = nil, metadatarepos = nil, edition = "community")
+      def initialize(cachepath = nil, metadatarepos = nil, edition = "community", options = {})
+
         ENV['GIT_SSH'] = "#{File.dirname(__FILE__)}/git_ssh_wrapper.sh"
+        if (options["ssh_key"] != nil)
+          ENV['SSH_KEYFILE'] = "#{options["ssh_key"]}"
+        end
         @sources = {}
         @writable_source = "simp-metadata"
         priority = 0

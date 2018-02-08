@@ -3,6 +3,7 @@ module Simp
     module Commands
       class Update
         def run(argv, engine = nil)
+          options = {}
           release = nil
           writable_url = nil
           ssh_key = nil
@@ -24,15 +25,16 @@ module Simp
           end
           options.parse!(argv)
 
+
+          if (ssh_key != nil)
+            options["ssh_key"] = File.expand_path(ssh_key)
+          end
           if (engine == nil)
             root = true
-            engine = Simp::Metadata::Engine.new()
+            engine = Simp::Metadata::Engine.new(nil, nil, "community", options)
             if (writable_url != nil)
               comp, url = writable_url.split(',')
               engine.writable_url(comp, url)
-            end
-            if (ssh_key != nil)
-              engine.ssh_key = File.expand_path(ssh_key)
             end
           else
             root = false

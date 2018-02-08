@@ -3,7 +3,7 @@ module Simp
     module Commands
       class Clone
         def run(argv, engine = nil)
-
+          options = {}
           writable_urls = nil
           ssh_key = nil
           edition = "community"
@@ -23,6 +23,9 @@ module Simp
             end
           end.parse!(argv)
 
+          if (ssh_key != nil)
+            options["ssh_key"] = File.expand_path(ssh_key)
+          end
           if (engine == nil)
             root = true
             metadatarepos = {}
@@ -34,10 +37,7 @@ module Simp
                 url = array[(offset * 2) + 1]
                 metadatarepos[comp] = url
               end
-              engine = Simp::Metadata::Engine.new(nil, metadatarepos, edition)
-            end
-            if (ssh_key != nil)
-              engine.ssh_key = File.expand_path(ssh_key)
+              engine = Simp::Metadata::Engine.new(nil, metadatarepos, edition, options)
             end
           else
             root = false

@@ -117,9 +117,7 @@ module Simp
           puts @load_path
           # XXX ToDo: Write files to yaml, commit and push (where appropriate)
 
-          if (engine.ssh_key != nil)
-            ENV['SSH_KEYFILE'] = "#{engine.ssh_key}"
-          end
+
 
           Simp::Metadata.run("cd #{@load_path} && rm -rf v1")
           FileUtils.mkdir_p("#{@load_path}/v1")
