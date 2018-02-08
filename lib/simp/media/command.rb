@@ -41,7 +41,7 @@ module Simp
           opts.on("-S", "--signing-key [keyid]", "GPG ID of signing key") do |opt|
             options["signing_key"] = opt
           end
-          opts.on("-d", "--local-directory [directory]", "Local directory to add to SIMP") do |opt|
+          opts.on("-D", "--local-directory [directory]", "Local directory to add to SIMP") do |opt|
             options["local_directory"] = opt
           end
           opts.on("-u", "--url [url]", "URL of git hosting server to use (control-repo output only)") do |opt|
