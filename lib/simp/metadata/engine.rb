@@ -12,7 +12,7 @@ module Simp
         @writable_source = "simp-metadata"
         priority = 0
         bootstrap_source = Simp::Metadata::Bootstrap_source.new(edition)
-        if (metadatarepos)
+        if (metadatarepos != nil)
           metadatarepos.each do |reponame, url|
             # XXX: ToDo replace with better logic once Simp::Metadata.download_component gets refactored.
             # MUCH LAYERING VIOLATIONS
