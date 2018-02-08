@@ -118,7 +118,6 @@ module Simp
           # XXX ToDo: Write files to yaml, commit and push (where appropriate)
 
           if (engine.ssh_key != nil)
-            ENV['GIT_SSH'] = "#{File.dirname(__FILE__)}/git_ssh_wrapper.sh"
             ENV['SSH_KEYFILE'] = "#{engine.ssh_key}"
           end
 

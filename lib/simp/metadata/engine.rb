@@ -8,6 +8,7 @@ module Simp
       attr_accessor :sources
 
       def initialize(cachepath = nil, metadatarepos = nil, edition = "community")
+        ENV['GIT_SSH'] = "#{File.dirname(__FILE__)}/git_ssh_wrapper.sh"
         @sources = {}
         @writable_source = "simp-metadata"
         priority = 0
