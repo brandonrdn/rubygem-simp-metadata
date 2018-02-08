@@ -16,10 +16,11 @@ module Simp
           metadatarepos.each do |reponame, url|
             # XXX: ToDo replace with better logic once Simp::Metadata.download_component gets refactored.
             # MUCH LAYERING VIOLATIONS
-            bootstrap_source.components[reponame]["locations"][0]["url"] = url
-            bootstrap_source.components[reponame]["locations"][0]["method"] = "git"
-            bootstrap_source.components[reponame]["locations"][0]["extract"] = false
-
+            if (bootstrap_source.components.key?(reponame))
+              bootstrap_source.components[reponame]["locations"][0]["url"] = url
+              bootstrap_source.components[reponame]["locations"][0]["method"] = "git"
+              bootstrap_source.components[reponame]["locations"][0]["extract"] = false
+            end
           end
         end
         @sources[bootstrap_source.name] = bootstrap_source
