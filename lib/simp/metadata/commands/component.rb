@@ -3,14 +3,9 @@ module Simp
     module Commands
       class Component
         def run(argv, engine = nil)
-          release = nil
-          OptionParser.new do |opts|
 
-            opts.banner = "Usage: simp-metadata component create component_name name=value"
-            opts.on("-d", "--debug [level]", "debug logging level: critical, error, warning, info, debug1, debug2") do |opt|
-              $simp_metadata_debug_level = opt
-            end
-          end.parse!(argv)
+          options(argv) do
+          end
 
           if (engine == nil)
             root = true
@@ -63,9 +58,9 @@ module Simp
                 attribute = argv[2]
                 comp = engine.components[component]
                 if attribute.nil?
-                  comp.each do |key,value|
+                  comp.each do |key, value|
                     unless value.nil? or value == ""
-                    puts "#{key}: #{value}"
+                      puts "#{key}: #{value}"
                     end
                   end
                   puts "location:"

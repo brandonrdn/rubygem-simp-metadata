@@ -3,25 +3,9 @@ module Simp
     module Commands
       class Clone
         def run(argv, engine = nil)
-          options = {}
-          writable_urls = nil
-          ssh_key = nil
-          edition = "community"
-          OptionParser.new do |opts|
-            opts.banner = "Usage: simp-metadata clone source_release target_release"
-            opts.on("-d", "--debug [level]", "debug logging level: critical, error, warning, info, debug1, debug2") do |opt|
-              $simp_metadata_debug_level = opt
-            end
-            opts.on("-i", "--identity [ssh_key_file]", "specify ssh_key to be used") do |opt|
-              ssh_key = opt
-            end
-            opts.on("-w", "--writable-url [component,url[,component,url]]", "writable component,url") do |opt|
-              writable_urls = opt
-            end
-            opts.on("-e", "--edition [edition]", "simp edition") do |opt|
-              edition = opt
-            end
-          end.parse!(argv)
+
+          options(argv) do
+          end
 
           if (ssh_key != nil)
             options["ssh_key"] = File.expand_path(ssh_key)

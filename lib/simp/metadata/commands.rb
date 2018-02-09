@@ -1,4 +1,5 @@
 # XXX ToDo: Dynamically load all files
+require 'simp/metadata/commands/base'
 require 'simp/metadata/commands/release'
 require 'simp/metadata/commands/releases'
 require 'simp/metadata/commands/save'
@@ -15,7 +16,6 @@ require 'simp/metadata/commands/search'
 module Simp
   module Metadata
     module Commands
-
     end
   end
 end
