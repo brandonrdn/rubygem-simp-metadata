@@ -1,7 +1,7 @@
 module Simp
   module Metadata
     module Commands
-      class Delete
+      class Delete < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
 
           options(argv) do

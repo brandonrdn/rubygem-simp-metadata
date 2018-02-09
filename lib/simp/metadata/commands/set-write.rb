@@ -1,7 +1,7 @@
 module Simp
   module Metadata
     module Commands
-      class Set_write
+      class Set_write < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
 
           options(argv) do
