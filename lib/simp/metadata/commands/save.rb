@@ -1,10 +1,12 @@
+require_relative '../commands'
 module Simp
   module Metadata
     module Commands
       class Save < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
 
-          options(argv) do
+          options = defaults(argv) do |opts|
+            opts.banner = "Usage: simp-metadata save [options] [message]"
           end
 
           if (engine == nil)

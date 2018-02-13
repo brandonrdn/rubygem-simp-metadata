@@ -1,10 +1,12 @@
+require_relative '../commands'
 module Simp
   module Metadata
     module Commands
       class Releases < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
 
-          options(argv) do
+          options = defaults(argv) do |opts|
+            opts.banner = "Usage: simp-metadata releases"
           end
 
           if (engine == nil)

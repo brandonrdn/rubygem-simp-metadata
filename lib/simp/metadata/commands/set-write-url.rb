@@ -1,10 +1,12 @@
+require_relative '../commands'
 module Simp
   module Metadata
     module Commands
       class Set_write_url < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
 
-          options(argv) do
+          options = defaults(argv) do |opts|
+            opts.banner = "Usage: simp-metadata set-write-url <repo_name> <url>"
           end
 
           if (engine == nil)

@@ -1,3 +1,4 @@
+require_relative '../commands'
 module Simp
   module Metadata
     module Commands
@@ -5,17 +6,18 @@ module Simp
 
         def run(argv, engine = nil)
 
-          options(argv) do
+          options = defaults(argv) do |opts|
+            opts.banner = "Usage: simp-metadata update <component> <setting> <value>"
           end
 
-          if (ssh_key != nil)
-            options["ssh_key"] = File.expand_path(ssh_key)
+          if (options["ssh_key"] != nil)
+            options["ssh_key"] = File.expand_path(options["ssh_key"])
           end
           if (engine == nil)
             root = true
             engine = Simp::Metadata::Engine.new(nil, nil, "community", options)
-            if (writable_url != nil)
-              comp, url = writable_url.split(',')
+            if (options["writable_url"] != nil)
+              comp, url = options["writable_url"].split(',')
               engine.writable_url(comp, url)
             end
           else
@@ -25,10 +27,10 @@ module Simp
             component = argv[0]
             setting = argv[1]
             value = argv[2]
-            if (release == nil)
+            if (options["release"] == nil)
               object = engine.components[component]
             else
-              object = engine.releases[release].components[component]
+              object = engine.releases[options["release"]].components[component]
             end
             unless (object.methods.include?(setting.to_sym))
               Simp::Metadata.critical("#{setting} is not a valid setting")

@@ -1,11 +1,10 @@
+require_relative '../commands'
 module Simp
   module Metadata
     module Commands
       class Component < Simp::Metadata::Commands::Base
-        def run(argv, engine = nil)
 
-          options(argv) do
-          end
+        def run(argv, engine = nil)
 
           if (engine == nil)
             root = true
@@ -16,7 +15,14 @@ module Simp
           begin
             subcommand = argv[0]
             case subcommand
+              when "--help", "-h"
+                options = defaults(argv) do |opts|
+                  opts.banner = "Usage: simp-metadata component [ create | view | update ]"
+                end
               when "create"
+                options = defaults(argv) do |opts|
+                  opts.banner = "Usage: simp-metadata component create <component_name> name=<value>"
+                end
                 component = argv[1]
                 argv.shift
                 data = {"locations" => [{"primary" => true}]}
@@ -39,6 +45,9 @@ module Simp
                 end
                 engine.components.create(component, data)
               when "update"
+                options = defaults(argv) do |opts|
+                  opts.banner = "Usage: simp-metadata component update <component> <setting> <value>"
+                end
                 component = argv[1]
                 setting = argv[2]
                 value = argv[3]
@@ -54,6 +63,9 @@ module Simp
                   exit 6
                 end
               when "view"
+                options = defaults(argv) do |opts|
+                  opts.banner = "Usage: simp-metadata component view <component> [attribute]"
+                end
                 component = argv[1]
                 attribute = argv[2]
                 comp = engine.components[component]

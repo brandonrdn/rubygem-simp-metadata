@@ -1,13 +1,15 @@
+require_relative '../commands'
 module Simp
   module Metadata
     module Commands
       class Delete < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
 
-          options(argv) do
+          options = defaults(argv) do | opts|
+            opts.banner = "Usage: simp-metadata delete <component_name>"
           end
 
-          if (ssh_key != nil)
+          if (options["ssh_key"] != nil)
             options["ssh_key"] = File.expand_path(ssh_key)
           end
           if (engine == nil)

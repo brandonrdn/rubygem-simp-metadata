@@ -1,4 +1,5 @@
 require 'cgi'
+require_relative '../commands'
 
 module Simp
   module Metadata
@@ -7,7 +8,8 @@ module Simp
 
         def run(argv, engine = nil)
 
-          options(argv) do
+          options = defaults(argv) do |opts|
+            opts.banner = "Usage: simp-metadata search <attribute>=<value>\n(supports multiple attributes as well as encoded URLs)"
           end
 
           if (engine == nil)
