@@ -68,7 +68,11 @@ module Simp
                 end
                 component = argv[1]
                 attribute = argv[2]
-                comp = engine.components[component]
+                if (options["release"] == nil)
+                  comp = engine.components[component]
+                else
+                  comp = engine.releases[options["release"]].components[component]
+                end
                 if attribute.nil?
                   comp.each do |key, value|
                     unless value.nil? or value == ""
