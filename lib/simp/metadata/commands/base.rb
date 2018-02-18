@@ -9,10 +9,16 @@ module Simp
           end
           if (engine == nil)
             root = true
-            engine = Simp::Metadata::Engine.new(nil, nil, "community", options)
-            if (options["writable_url"] != nil)
-              comp, url = options["writable_url"].split(',')
-              engine.writable_url(comp, url)
+            metadatarepos = {}
+            if (options["writable_urls"] != nil)
+              array = options["writable_urls"].split(',')
+              elements = array.size / 2;
+              (0...elements).each do |offset|
+                comp = array[offset * 2]
+                url = array[(offset * 2) + 1]
+                metadatarepos[comp] = url
+              end
+              engine = Simp::Metadata::Engine.new(nil, metadatarepos, options["edition"], options)
             end
           else
             root = false
@@ -36,8 +42,8 @@ module Simp
             opts.on("-i", "--identity [ssh_key_file]", "specify ssh_key to be used") do |opt|
               options["ssh_key"] = opt
             end
-            opts.on("-w", "--writable-url [component,url]", "component,url") do |opt|
-              options["writable_url"] = opt
+            opts.on("-w", "--writable-urls [component,url]", "component,url") do |opt|
+              options["writable_urls"] = opt
             end
             opts.on("-e", "--edition [edition]", "simp edition") do |opt|
               options["edition"] = opt
