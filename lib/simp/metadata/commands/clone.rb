@@ -9,9 +9,6 @@ module Simp
             opts.banner = "Usage: simp-metadata clone <source_release> <target_release>"
           end
 
-          if (ssh_key != nil)
-            options["ssh_key"] = File.expand_path(ssh_key)
-          end
           if (engine == nil)
             root = true
             metadatarepos = {}
