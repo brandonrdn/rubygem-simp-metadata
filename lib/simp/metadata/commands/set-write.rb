@@ -9,10 +9,8 @@ module Simp
             opts.banner = "Usage: simp-metadata set-write [options]"
           end
 
-          if (engine == nil)
-            engine = Simp::Metadata::Engine.new()
-            Simp::Metadata.warning("'set-write' subcommand is only useful in scripts!")
-          end
+
+          engine, root = get_engine(engine, options)
           engine.writable_source_name = argv[0]
         end
       end

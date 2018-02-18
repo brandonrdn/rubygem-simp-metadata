@@ -9,10 +9,8 @@ module Simp
             opts.banner = "Usage: simp-metadata save [options] [message]"
           end
 
-          if (engine == nil)
-            engine = Simp::Metadata::Engine.new()
-            Simp::Metadata.warning("'save' subcommand is only useful in scripts!")
-          end
+
+          engine, root = get_engine(engine, options)
           if (argv.size == 0)
             short = "Auto-saving using simp-metadata"
           else

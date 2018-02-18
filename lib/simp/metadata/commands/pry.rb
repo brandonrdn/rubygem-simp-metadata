@@ -9,10 +9,7 @@ module Simp
             opts.banner = "Usage: simp-metadata pry"
           end
 
-          if (engine == nil)
-            engine = Simp::Metadata::Engine.new()
-            Simp::Metadata.warning("'pry' subcommand is only useful in scripts!")
-          end
+          engine, root = get_engine(engine, options)
           require 'pry'
           binding.pry
         end

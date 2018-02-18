@@ -12,12 +12,8 @@ module Simp
             opts.banner = "Usage: simp-metadata search <attribute>=<value>\n(supports multiple attributes as well as encoded URLs)"
           end
 
-          if (engine == nil)
-            root = true
-            engine = Simp::Metadata::Engine.new()
-          else
-            root = false
-          end
+
+          engine, root = get_engine(engine, options)
           begin
             data = {}
             argv.each do |argument|

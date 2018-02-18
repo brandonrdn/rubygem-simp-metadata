@@ -9,9 +9,8 @@ module Simp
             opts.banner = "Usage: simp-metadata release <release_name> <components>"
           end
 
-          if (engine == nil)
-            engine = Simp::Metadata::Engine.new()
-          end
+
+          engine, root = get_engine(engine, options)
           begin
             release = argv[0]
             section = argv[1]

@@ -10,19 +10,8 @@ module Simp
             opts.banner = "Usage: simp-metadata update <component> <setting> <value>"
           end
 
-          if (options["ssh_key"] != nil)
-            options["ssh_key"] = File.expand_path(options["ssh_key"])
-          end
-          if (engine == nil)
-            root = true
-            engine = Simp::Metadata::Engine.new(nil, nil, "community", options)
-            if (options["writable_url"] != nil)
-              comp, url = options["writable_url"].split(',')
-              engine.writable_url(comp, url)
-            end
-          else
-            root = false
-          end
+
+          engine, root = get_engine(engine, options)
           begin
             component = argv[0]
             setting = argv[1]

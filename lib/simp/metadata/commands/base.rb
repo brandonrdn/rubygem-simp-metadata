@@ -3,7 +3,22 @@ module Simp
   module Metadata
     module Commands
       class Base
-
+        def get_engine(engine, options)
+          if (options["ssh_key"] != nil)
+            options["ssh_key"] = File.expand_path(options["ssh_key"])
+          end
+          if (engine == nil)
+            root = true
+            engine = Simp::Metadata::Engine.new(nil, nil, "community", options)
+            if (options["writable_url"] != nil)
+              comp, url = options["writable_url"].split(',')
+              engine.writable_url(comp, url)
+            end
+          else
+            root = false
+          end
+          return engine, root
+        end
         # Defines default arguments for commands
         def defaults(argv, &block)
 
