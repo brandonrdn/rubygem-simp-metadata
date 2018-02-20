@@ -3,7 +3,10 @@ module Simp
   module Metadata
     module Commands
       class Base
-        def get_engine(engine, options)
+        def get_engine(engine, options = {})
+          require 'pry'
+          binding.pry
+          root = false
           if (options["ssh_key"] != nil)
             options["ssh_key"] = File.expand_path(options["ssh_key"])
           end
@@ -19,6 +22,8 @@ module Simp
                 metadatarepos[comp] = url
               end
               engine = Simp::Metadata::Engine.new(nil, metadatarepos, options["edition"], options)
+            else
+              engine = Simp::Metadata::Engine.new(nil, nil, options["edition"], options)
             end
           else
             root = false
@@ -28,10 +33,11 @@ module Simp
         # Defines default arguments for commands
         def defaults(argv, &block)
 
-          options = {}
+          options = {
+              "edition" => "community",
+          }
 
           option_parser = OptionParser.new do |opts|
-
             opts.banner = "Usage: simp-metadata <command> [options]"
             opts.on("-d", "--debug [level]", "debug logging level: critical, error, warning, info, debug1, debug2") do |opt|
               $simp_metadata_debug_level = opt
