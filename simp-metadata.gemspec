@@ -16,5 +16,4 @@ Gem::Specification.new do |s|
   s.license = 'Apache-2.0'
   s.homepage = 'https://github.com/simp/rubygem-simp-metadata'
   s.files = Dir['Rakefile', '{bin,lib,spec}/**/*', 'README*', 'LICENSE*']
-  s.add_runtime_dependency "pry"
 end
