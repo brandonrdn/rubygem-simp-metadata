@@ -9,11 +9,8 @@ module Simp
             opts.banner = "Usage: simp-metadata set-write-url <repo_name> <url>"
           end
 
-          if (engine == nil)
-            engine = Simp::Metadata::Engine.new()
-            Simp::Metadata.warning("'set-write-url' subcommand is only useful in scripts!")
-          end
 
+          engine, root = get_engine(engine, options)
           engine.writable_url(argv[0], argv[1])
         end
       end

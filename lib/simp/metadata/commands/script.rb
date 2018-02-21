@@ -12,9 +12,8 @@ module Simp
           end
 
           $commandqueue = Queue.new();
-          if (engine == nil)
-            engine = Simp::Metadata::Engine.new()
-          end
+
+          engine, root = get_engine(engine, options)
           unless (argv[0] != nil)
             Simp::Metadata.critical("filename must be specified")
             exit 3

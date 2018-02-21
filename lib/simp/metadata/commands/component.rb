@@ -6,12 +6,7 @@ module Simp
 
         def run(argv, engine = nil)
 
-          if (engine == nil)
-            root = true
-            engine = Simp::Metadata::Engine.new()
-          else
-            root = false
-          end
+
           begin
             subcommand = argv[0]
             case subcommand
@@ -23,6 +18,7 @@ module Simp
                 options = defaults(argv) do |opts|
                   opts.banner = "Usage: simp-metadata component create <component_name> name=<value>"
                 end
+                engine, root = get_engine(engine, options)
                 component = argv[1]
                 argv.shift
                 data = {"locations" => [{"primary" => true}]}
@@ -48,6 +44,7 @@ module Simp
                 options = defaults(argv) do |opts|
                   opts.banner = "Usage: simp-metadata component update <component> <setting> <value>"
                 end
+                engine, root = get_engine(engine, options)
                 component = argv[1]
                 setting = argv[2]
                 value = argv[3]
@@ -66,9 +63,14 @@ module Simp
                 options = defaults(argv) do |opts|
                   opts.banner = "Usage: simp-metadata component view <component> [attribute]"
                 end
+                engine, root = get_engine(engine, options)
                 component = argv[1]
                 attribute = argv[2]
-                comp = engine.components[component]
+                if (options["release"] == nil)
+                  comp = engine.components[component]
+                else
+                  comp = engine.releases[options["release"]].components[component]
+                end
                 if attribute.nil?
                   comp.each do |key, value|
                     unless value.nil? or value == ""

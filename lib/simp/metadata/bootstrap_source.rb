@@ -20,22 +20,6 @@ module Simp
         @edition = edition
 
         case edition
-          when "community"
-            @data = {
-                "components" => {
-                    "simp-metadata" => {
-                        "component-type" => "simp-metadata",
-                        "authoritative" => true,
-                        "locations" => [
-                            {
-                                "url" => "https://github.com/simp/simp-metadata",
-                                "method" => "git",
-                                "primary" => true,
-                            }
-                        ],
-                    }
-                }
-            }
           when "enterprise"
             @data = {
                 "components" => {
@@ -61,6 +45,22 @@ module Simp
                                 "primary" => true,
                             }
                         ]
+                    }
+                }
+            }
+          else
+            @data = {
+                "components" => {
+                    "simp-metadata" => {
+                        "component-type" => "simp-metadata",
+                        "authoritative" => true,
+                        "locations" => [
+                            {
+                                "url" => "https://github.com/simp/simp-metadata",
+                                "method" => "git",
+                                "primary" => true,
+                            }
+                        ],
                     }
                 }
             }

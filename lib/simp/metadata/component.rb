@@ -63,7 +63,7 @@ module Simp
       end
 
       def keys()
-        ["component_type", "authoritative", "asset_name", "extension", "format", "module_name", "type", "url", "method", "extract"]
+        ["component_type", "authoritative", "asset_name", "extension", "format", "module_name", "type", "url", "method", "extract", "branch", "tag", "ref", "version"]
       end
 
       def [] (index)
@@ -209,6 +209,7 @@ module Simp
         end
         engine.writable_source.dirty = true
       end
+
       def version
         ver = ""
         ["version", "tag", "ref", "branch"].each do |item|

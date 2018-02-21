@@ -9,25 +9,7 @@ module Simp
             opts.banner = "Usage: simp-metadata delete <component_name>"
           end
 
-          if (options["ssh_key"] != nil)
-            options["ssh_key"] = File.expand_path(ssh_key)
-          end
-          if (engine == nil)
-            root = true
-            metadatarepos = {}
-            if (writable_urls != nil)
-              array = writable_urls.split(',')
-              elements = array.size / 2;
-              (0...elements).each do |offset|
-                comp = array[offset * 2]
-                url = array[(offset * 2) + 1]
-                metadatarepos[comp] = url
-              end
-              engine = Simp::Metadata::Engine.new(nil, metadatarepos, edition, options)
-            end
-          else
-            root = false
-          end
+          engine, root = get_engine(engine, options)
           begin
             engine.releases.delete(argv[0])
             if (root == true)
