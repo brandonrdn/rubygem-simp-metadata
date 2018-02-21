@@ -1,6 +1,5 @@
 source 'https://rubygems.org'
-gem 'pry'
-gem 'pry-byebug'
+gemspec
 # General gems
 gem 'rubocop', '~> 0.41.2', require: false
 gem 'rake', '~> 11.3'

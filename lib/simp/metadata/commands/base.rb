@@ -4,8 +4,6 @@ module Simp
     module Commands
       class Base
         def get_engine(engine, options = {})
-          require 'pry'
-          binding.pry
           root = false
           if (options["ssh_key"] != nil)
             options["ssh_key"] = File.expand_path(options["ssh_key"])
