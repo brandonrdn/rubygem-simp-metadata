@@ -48,6 +48,8 @@ module Simp
       def extension
         if (self.real_extension == nil)
           case (self.component_type)
+            when "simp-metadata"
+              "tgz"
             when "logstash-filter"
               "gem"
             when "rubygem"
