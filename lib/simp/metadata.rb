@@ -170,7 +170,15 @@ module Simp
           # Try to load from /etc/simp/license.key file
           ret_filename = "/etc/simp/license.key"
         end
-        ret_data = File.read(ret_filename)
+        if (File.exists?(ret_filename))
+          ret_data = File.read(ret_filename)
+	      else
+          if ($simp_license_temp == nil)
+            $simp_license_temp = Tempfile.new('license_data')
+            $simp_license_temp.write("")
+          end
+          ret_filename = $simp_license_temp.path
+        end
       end
       return ret_filename, ret_data
     end
@@ -187,15 +195,29 @@ module Simp
           scheme = "https"
           host = 'enterprise-download.simp-project.com'
           filetype = 'tgz'
+          if (component != nil)
+            if (component.extension != "")
+              filetype = component.extension
+            end
+          end
           version = 'latest'
-          uri.query.split("&").each do |element|
-            elements = element.split("=")
-            if (elements.size > 1)
-              case elements[0]
-                when "version"
-                  version = elements[1]
-                when "filetype"
-                  filetype = elements[1]
+          if (component != nil)
+            if (component.version != "")
+              version = component.version
+            end
+          end
+          if (uri.query != nil)
+            uri.query.split("&").each do |element|
+              if (element.class.to_s == "String")
+                elements = element.split("=")
+                if (elements.size > 1)
+                  case elements[0]
+                    when "version"
+                      version = elements[1]
+                    when "filetype"
+                      filetype = elements[1]
+                  end
+                end
               end
             end
           end
