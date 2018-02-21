@@ -80,6 +80,7 @@ module Simp
         metadata = Simp::Metadata::Engine.new(nil, nil, @options["edition"])
         version = @options["version"]
         metadata.releases[version].components.each do |component|
+          info("Adding #{component.name}")
           retval = @input.fetch_component(component, {})
           @output.add_component(component, retval)
         end
