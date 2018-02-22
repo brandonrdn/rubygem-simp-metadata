@@ -11,7 +11,7 @@ module Simp
 
         ENV['GIT_SSH'] = "#{File.dirname(__FILE__)}/git_ssh_wrapper.sh"
         if (options["ssh_key"] != nil)
-          ENV['SSH_KEYFILE'] = "#{options["ssh_key"]}"
+          ENV['SIMP_METADATA_SSHKEY'] = "#{options["ssh_key"]}"
         end
         @sources = {}
         @writable_source = "simp-metadata"

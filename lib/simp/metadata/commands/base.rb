@@ -32,7 +32,7 @@ module Simp
         def defaults(argv, &block)
 
           options = {
-              "edition" => "community",
+              "edition" => ENV.fetch('SIMP_METADATA_EDITION', 'community'),
           }
 
           option_parser = OptionParser.new do |opts|
