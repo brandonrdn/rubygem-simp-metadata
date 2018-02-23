@@ -34,7 +34,9 @@ module Simp
           options = {
               "edition" => ENV.fetch('SIMP_METADATA_EDITION', 'community'),
           }
-
+          if (ENV.fetch('SIMP_METADATA_WRITABLE_URLS', nil) != nil)
+            options["writable_urls"] = ENV['SIMP_METADATA_WRITABLE_URLS']
+          end
           option_parser = OptionParser.new do |opts|
             opts.banner = "Usage: simp-metadata <command> [options]"
             opts.on("-d", "--debug [level]", "debug logging level: critical, error, warning, info, debug1, debug2") do |opt|
