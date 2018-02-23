@@ -14,28 +14,43 @@ module Simp
       def to_s
         self.name
       end
-
-      def get_from_component()
+      def component_source()
         engine.sources.each do |name, source|
           if (source.components != nil)
             if (source.components.key?(self.name))
-              return source.components[self.name]
+              return source
             end
           end
         end
       end
-
-      def get_from_release()
-        retval = {}
+      def release_source()
+        retval = engine.sources["bootstrap_metadata"]
         engine.sources.each do |name, source|
           if (source.releases.key?(release_version))
             if (source.releases[release_version].key?(self.name))
-              retval = source.releases[release_version][self.name]
+              retval = source
             end
           else
             if (source.release(release_version).key?(self.name))
-              retval = source.release(release_version)[self.name]
+              retval = source
             end
+          end
+        end
+        return retval
+      end
+      def get_from_component()
+        return self.component_source.components[self.name]
+      end
+
+      def get_from_release()
+        retval = {}
+        if (self.release_source.releases.key?(release_version))
+          if (self.release_source.releases[release_version].key?(self.name))
+            retval = self.release_source.releases[release_version][self.name]
+          end
+        else
+          if (self.release_source.release(release_version).key?(self.name))
+            retval = self.release_source.release(release_version)[self.name]
           end
         end
         return retval
@@ -65,7 +80,7 @@ module Simp
       end
 
       def keys()
-        ["component_type", "authoritative", "asset_name", "extension", "format", "module_name", "type", "url", "method", "extract", "branch", "tag", "ref", "version"]
+        ["component_type", "authoritative", "asset_name", "extension", "format", "module_name", "type", "url", "method", "extract", "branch", "tag", "ref", "version", "release_source", "component_source"]
       end
 
       def [] (index)
@@ -169,7 +184,7 @@ module Simp
       end
 
       def ref=(value)
-        release = engine.writable_source.releases[release_version]
+        release = self.release_source.releases[release_version]
         if (release != nil)
           if (release.key?(name))
             release[name]["ref"] = value
@@ -177,7 +192,7 @@ module Simp
             release[name] = {"ref" => value}
           end
         end
-        engine.writable_source.dirty = true
+        self.release_source.dirty = true
       end
 
       def branch
@@ -185,7 +200,7 @@ module Simp
       end
 
       def branch=(value)
-        release = engine.writable_source.releases[release_version]
+        release = self.release_source.releases[release_version]
         if (release != nil)
           if (release.key?(name))
             release[name]["branch"] = value
@@ -193,7 +208,7 @@ module Simp
             release[name] = {"branch" => value}
           end
         end
-        engine.writable_source.dirty = true
+        self.release_source.dirty = true
       end
 
       def tag
@@ -201,7 +216,7 @@ module Simp
       end
 
       def tag=(value)
-        release = engine.writable_source.releases[release_version]
+        release = self.release_source.releases[release_version]
         if (release != nil)
           if (release.key?(name))
             release[name]["tag"] = value
@@ -209,7 +224,7 @@ module Simp
             release[name] = {"tag" => value}
           end
         end
-        engine.writable_source.dirty = true
+        self.release_source.dirty = true
       end
 
       def version

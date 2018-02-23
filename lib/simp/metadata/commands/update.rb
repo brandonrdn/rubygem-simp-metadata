@@ -25,7 +25,6 @@ module Simp
               Simp::Metadata.critical("#{setting} is not a valid setting")
               exit 7
             end
-
             begin
               object.send("#{setting}=".to_sym, value)
             rescue NoMethodError => ex
