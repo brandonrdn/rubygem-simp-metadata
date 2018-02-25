@@ -16,13 +16,13 @@ module Simp
         def add_component(component, fetch_return_value)
           case component.component_type
             when "documentation"
-              subdirectory = "simp/docs"
+              subdirectory = "SIMP/docs"
             when "simp-metadata"
-              subdirectory = "simp/metadata"
+              subdirectory = "SIMP/metadata"
             when "puppet-module"
-              subdirectory = "simp/modules"
+              subdirectory = "SIMP/modules"
             else
-              subdirectory = "simp/assets"
+              subdirectory = "SIMP/assets"
           end
           case component.output_type
             when :directory
