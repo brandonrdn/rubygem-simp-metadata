@@ -59,7 +59,12 @@ module Simp
                 subdirectory = "simp/metadata"
                 outputpath = "#{@repopath}/#{subdirectory}/#{component.name}"
                 FileUtils.mkdir_p(outputpath)
-                exit_code = run("cd #{fetch_return_value['path']} && git --work-tree=\"#{outputpath}\" checkout #{component.version} .")
+                if (Dir.exists?("#{fetch_return_value['path']}/.git"))
+                  exit_code = run("cd #{fetch_return_value['path']} && git --work-tree=\"#{outputpath}\" checkout #{component.version} .")
+                else
+                  exit_code = run("cd #{fetch_return_value['path']} && tar -cf - . | tar -xvpf - -C \"#{outputpath}\"")
+                end
+
                 unless exit_code.success?
                   error "unable to copy #{component.name} to #{outputpath}: error code #{exit_code.exitstatus}"
                 end
