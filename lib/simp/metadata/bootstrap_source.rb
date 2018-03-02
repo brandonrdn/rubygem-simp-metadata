@@ -48,6 +48,23 @@ module Simp
                     }
                 }
             }
+          when "enterprise-only"
+            @data = {
+                "components" => {
+                    "enterprise-metadata" => {
+                        "component-type" => "simp-metadata",
+                        "authoritative" => true,
+                        "locations" => [
+                            {
+                                "url" => "simp-enterprise:///enterprise-metadata?version=master&filetype=tgz",
+                                "method" => "file",
+                                "extract" => true,
+                                "primary" => true,
+                            }
+                        ]
+                    }
+                }
+            }
           else
             @data = {
                 "components" => {
@@ -70,12 +87,6 @@ module Simp
 
       def release(version)
         case edition
-          when "community"
-            {
-                "simp-metadata" => {
-                    "branch" => "master"
-                }
-            }
           when "enterprise"
             {
                 "simp-metadata" => {
@@ -83,6 +94,18 @@ module Simp
                 },
                 "enterprise-metadata" => {
                     "version" => "master",
+                }
+            }
+          when "enterprise-only"
+            {
+                "enterprise-metadata" => {
+                    "version" => "master",
+                }
+            }
+          else
+            {
+                "simp-metadata" => {
+                    "branch" => "master"
                 }
             }
         end
