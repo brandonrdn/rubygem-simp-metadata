@@ -14,15 +14,20 @@ module Simp
       def to_s
         self.name
       end
+
       def component_source()
+        retval = engine.sources["bootstrap_metadata"]
         engine.sources.each do |name, source|
           if (source.components != nil)
             if (source.components.key?(self.name))
-              return source
+              retval = source
+              break
             end
           end
         end
+        return retval
       end
+
       def release_source()
         retval = engine.sources["bootstrap_metadata"]
         engine.sources.each do |name, source|
@@ -38,6 +43,7 @@ module Simp
         end
         return retval
       end
+
       def get_from_component()
         return self.component_source.components[self.name]
       end

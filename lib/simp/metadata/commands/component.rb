@@ -66,27 +66,32 @@ module Simp
                 engine, root = get_engine(engine, options)
                 component = argv[1]
                 attribute = argv[2]
-                if (options["release"] == nil)
-                  comp = engine.components[component]
-                else
-                  comp = engine.releases[options["release"]].components[component]
-                end
-                if attribute.nil?
-                  comp.each do |key, value|
-                    unless value.nil? or value == ""
-                      puts "#{key}: #{value}"
-                    end
+                if (engine.components.key?(component))
+                  if (options["release"] == nil)
+                    comp = engine.components[component]
+                  else
+                    comp = engine.releases[options["release"]].components[component]
                   end
-                  puts "location:"
-                  comp.locations.each do |location|
-                    location.each do |key, value|
-                      unless value.nil?
-                        puts "  #{key}: #{value}"
+                  if attribute.nil?
+                    comp.each do |key, value|
+                      unless value.nil? or value == ""
+                        puts "#{key}: #{value}"
                       end
                     end
+                    puts "location:"
+                    comp.locations.each do |location|
+                      location.each do |key, value|
+                        unless value.nil?
+                          puts "  #{key}: #{value}"
+                        end
+                      end
+                    end
+                  else
+                    puts comp[attribute]
                   end
                 else
-                  puts comp[attribute]
+                  Simp::Metadata.critical("Unable to find component named '#{component}'")
+                  exit 5
                 end
             end
 
