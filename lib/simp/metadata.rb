@@ -37,6 +37,7 @@ module Simp
           "#{basedir}/#{component.output_filename}"
       end
     end
+
     # XXX: ToDo this entire logic stream is crappy.
     #      We need to replace this with a much more simplified version.
     def self.download_component(component, options)
@@ -44,7 +45,6 @@ module Simp
       retval = {}
       case component.class.to_s
         when "String"
-
           retval["path"] = self.directory_name(component, options)
           # XXX: ToDo We can bootstrap this with a hard coded source in the simp engine
           bootstrapped_components = {
@@ -128,17 +128,26 @@ module Simp
       end
       case method
         when "git"
-          unless (Dir.exists?(target))
-            info("Cloning from #{url}")
-            run("git clone #{url} #{target}")
-          else
-            Dir.chdir(target) do
-              info("Updating from #{url}")
-              run("git pull origin")
-            end
+          case uri.scheme
+            when "simp"
+              fetch_simp_enterprise(url, target, component, urlspec, options)
+            when "simp-enterprise"
+              fetch_simp_enterprise(url, target, component, urlspec, options)
+            else
+              unless (Dir.exists?(target))
+                info("Cloning from #{url}")
+                run("git clone #{url} #{target}")
+              else
+                Dir.chdir(target) do
+                  info("Updating from #{url}")
+                  run("git pull origin")
+                end
+              end
           end
         when "file"
           case uri.scheme
+            when "simp"
+              fetch_simp_enterprise(url, target, component, urlspec, options)
             when "simp-enterprise"
               fetch_simp_enterprise(url, target, component, urlspec, options)
             when "http"
@@ -150,6 +159,7 @@ module Simp
           end
       end
     end
+
     def self.get_license_data(filename)
       ret_filename = nil
       ret_data = ""
@@ -172,7 +182,7 @@ module Simp
         end
         if (File.exists?(ret_filename))
           ret_data = File.read(ret_filename)
-	      else
+        else
           if ($simp_license_temp == nil)
             $simp_license_temp = Tempfile.new('license_data')
             $simp_license_temp.write("")
@@ -221,12 +231,49 @@ module Simp
               end
             end
           end
+
           if (component != nil)
-            name = "/#{component.asset_name}"
+            name = "/#{component.name}/#{component.binaryname}"
           else
-            name = uri.path
+            name = "#{uri.path}#{uri.path}#{name}-#{version}.#{filetype}"
           end
-          path = "/products/simp-enterprise#{uri.path}#{name}-#{version}.#{filetype}"
+          path = "/products/simp-enterprise#{name}"
+        when "simp"
+          scheme = "https"
+          host = 'download.simp-project.com'
+          filetype = 'tgz'
+          if (component != nil)
+            if (component.extension != "")
+              filetype = component.extension
+            end
+          end
+          version = 'latest'
+          if (component != nil)
+            if (component.version != "")
+              version = component.version
+            end
+          end
+          if (uri.query != nil)
+            uri.query.split("&").each do |element|
+              if (element.class.to_s == "String")
+                elements = element.split("=")
+                if (elements.size > 1)
+                  case elements[0]
+                    when "version"
+                      version = elements[1]
+                    when "filetype"
+                      filetype = elements[1]
+                  end
+                end
+              end
+            end
+          end
+          if (component != nil)
+            name = "/#{component.name}/#{component.binaryname}"
+          else
+            name = "#{uri.path}#{uri.path}#{name}-#{version}.#{filetype}"
+          end
+          path = "/SIMP/assets#{name}"
         else
           scheme = uri.scheme
           host = uri.host
@@ -248,6 +295,8 @@ module Simp
                 http.key = OpenSSL::PKey::RSA.new(data)
                 http.verify_mode = OpenSSL::SSL::VERIFY_PEER
               end
+
+              debug2("using the following certificate (#{filename}) for client certificate auth: #{http.cert.subject}")
           end
       end
       info("Fetching from #{scheme}://#{host}:#{port}#{path}")
@@ -275,6 +324,7 @@ module Simp
           raise "HTTP Error Code: #{response.code}"
       end
     end
+
     def self.run(command)
       exitcode = nil
       Open3.popen3(command) do |stdin, stdout, stderr, thread|
@@ -285,6 +335,7 @@ module Simp
       end
       exitcode
     end
+
     def self.level?(level)
       setlevel = Simp::Metadata.convert_level($simp_metadata_debug_level)
       checklevel = Simp::Metadata.convert_level(level)
@@ -294,6 +345,7 @@ module Simp
         false
       end
     end
+
     def self.convert_level(level)
       case level
         when 'disabled'
@@ -314,6 +366,7 @@ module Simp
           3
       end
     end
+
     def self.print_message(prefix, message)
       message.split("\n").each do |line|
         output = "#{prefix}: #{line}"
@@ -322,31 +375,37 @@ module Simp
         end
       end
     end
+
     def self.debug1(message)
       if Simp::Metadata.level?('debug1')
         Simp::Metadata.print_message("DEBUG1", message)
       end
     end
+
     def self.debug2(message)
       if Simp::Metadata.level?('debug2')
         Simp::Metadata.print_message("DEBUG2", message)
       end
     end
+
     def self.info(message)
       if Simp::Metadata.level?('info')
         Simp::Metadata.print_message("INFO", message)
       end
     end
+
     def self.warning(message)
       if Simp::Metadata.level?('warning')
         Simp::Metadata.print_message("WARN", message)
       end
     end
+
     def self.error(message)
       if Simp::Metadata.level?('error')
         Simp::Metadata.print_message("ERROR", message)
       end
     end
+
     def self.critical(message)
       if Simp::Metadata.level?('critical')
         Simp::Metadata.print_message("CRITICAL", message)

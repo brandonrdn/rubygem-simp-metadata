@@ -85,54 +85,100 @@ module Simp
         else
           base = self.real_url
           uri = Simp::Metadata.uri(base)
-          if (uri.scheme == "simp-enterprise")
-            if (uri.query.class == String)
-              query_elements = uri.query.split("&")
-              newquery = []
-              found_version = false
-              found_filetype = false
-              query_elements.each do |element|
-                elements = element.split("=")
-                if (elements.size > 1)
-                  if (elements[0] == "version")
-                    found_version = true
-                    elements[1] = component.version
-                    newquery << elements.join("=")
-                  elsif (elements[0] == "filetype")
-                    found_filetype = true
-                    elements[1] = component.extension
-                    newquery << elements.join("=")
+          case uri.scheme
+            when "simp-enterprise"
+              if (uri.query.class == String)
+                query_elements = uri.query.split("&")
+                newquery = []
+                found_version = false
+                found_filetype = false
+                query_elements.each do |element|
+                  elements = element.split("=")
+                  if (elements.size > 1)
+                    if (elements[0] == "version")
+                      found_version = true
+                      elements[1] = component.version
+                      newquery << elements.join("=")
+                    elsif (elements[0] == "filetype")
+                      found_filetype = true
+                      elements[1] = component.extension
+                      newquery << elements.join("=")
+                    else
+                      newquery << element
+                    end
                   else
                     newquery << element
                   end
-                else
-                  newquery << element
                 end
-              end
-              if (found_version == false)
-                newquery << "version=#{component.version}"
-              end
-              if (found_filetype == false)
-                newquery << "filetype=#{component.extension}"
-              end
-              uri.query = newquery.join("&")
-            end
-            uri.to_s
-          else
-            case component.component_type
-              when "rubygems"
-                if (base =~ /.*\.gem/)
-                else
-                  "#{base}/#{component.asset_name}-#{component.version}.gem"
+                if (found_version == false)
+                  newquery << "version=#{component.version}"
                 end
-            end
-            base
+                if (found_filetype == false)
+                  newquery << "filetype=#{component.extension}"
+                end
+                uri.query = newquery.join("&")
+              end
+              uri.to_s
+
+            when "simp"
+              if (uri.query.class == String)
+                query_elements = uri.query.split("&")
+                newquery = []
+                found_version = false
+                found_filetype = false
+                query_elements.each do |element|
+                  elements = element.split("=")
+                  if (elements.size > 1)
+                    if (elements[0] == "version")
+                      found_version = true
+                      elements[1] = component.version
+                      newquery << elements.join("=")
+                    elsif (elements[0] == "filetype")
+                      found_filetype = true
+                      elements[1] = component.extension
+                      newquery << elements.join("=")
+                    else
+                      newquery << element
+                    end
+                  else
+                    newquery << element
+                  end
+                end
+                if (found_version == false)
+                  newquery << "version=#{component.version}"
+                end
+                if (found_filetype == false)
+                  newquery << "filetype=#{component.extension}"
+                end
+                uri.query = newquery.join("&")
+              end
+              uri.to_s
+            else
+              case component.component_type
+                when "rubygem"
+                  if (base =~ /.*\.gem/)
+                  else
+                    "#{base}/#{component.asset_name}-#{component.version}.gem"
+                  end
+              end
+              base
           end
         end
 
       end
 
       def real_url
+        if (component.compiled? == true)
+          case component.component_type
+            when "rubygem"
+              case component.release_source.to_s
+                when "simp-metadata"
+                  return "simp:///#{component.name}/#{component.binaryname}"
+                when "enterprise-metadata"
+                  return "simp-enterprise:///#{component.name}/#{component.binaryname}"
+              end
+          end
+        end
         if (location.key?("url"))
           location["url"]
         else

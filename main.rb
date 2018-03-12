@@ -3,7 +3,6 @@ require 'simp/metadata'
 require 'optparse'
 require 'ostruct'
 require 'pp'
-require 'pry'
 require 'json'
 
 command, *args = ARGV;

@@ -22,7 +22,7 @@ module Simp
             when "puppet-module"
               subdirectory = "SIMP/modules"
             else
-              subdirectory = "SIMP/assets"
+              subdirectory = "SIMP/assets/#{component.name}"
           end
           case component.output_type
             when :directory
