@@ -1,8 +1,6 @@
 # vim: set expandtab ts=2 sw=2:
 require 'simp/metadata'
 require 'yaml'
-require 'pry'
-require 'pry-byebug'
 $UPSTREAMREPO="https://github.com/simp/simp-core.git"
 $DATAREPO="git@github.com:simp/simp-metadata.git"
 

@@ -77,6 +77,8 @@ module Simp
               "gem"
             when "grafana-plugin"
               "zip"
+            when "puppet-module"
+              "tgz"
             else
               ""
           end
@@ -104,29 +106,32 @@ module Simp
       end
 
       def real_asset_name
-        get_from_component["asset_name"]
+        case self.component_type
+          when "puppet-module"
+            get_from_component["module_name"]
+          when "rubygem"
+            get_from_component["gem_name"]
+          else
+            get_from_component["asset_name"]
+        end
       end
-
+      def module_name
+        asset_name
+      end
       def asset_name
         if (self.real_asset_name == nil)
-          self.name
+          case self.component_type
+            when "puppet-module"
+              splitted = self.name.split("-")
+              splitted[splitted.size - 1]
+            else
+              self.name
+          end
         else
           self.real_asset_name
         end
       end
 
-      def real_module_name
-        get_from_component["module_name"]
-      end
-
-      def module_name
-        if (self.real_module_name == nil)
-          splitted = self.name.split("-")
-          splitted[splitted.size - 1]
-        else
-          self.real_module_name
-        end
-      end
 
       def output_type
         if (self.compiled?)
@@ -253,7 +258,7 @@ module Simp
       end
 
       def binaryname
-        "#{name}-#{ref}.gem"
+        "#{asset_name}-#{version}.#{extension}"
       end
     end
   end

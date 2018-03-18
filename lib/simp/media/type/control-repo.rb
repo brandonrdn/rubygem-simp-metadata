@@ -47,6 +47,8 @@ module Simp
                   raise "error, unable to create branch #{options["destination_branch"]} in git repo #{uri}"
               end
             end
+            run("rm -rf SIMP/modules")
+            run("rm -rf SIMP/assets")
           end
         end
 
@@ -56,7 +58,7 @@ module Simp
             case component.component_type
               when "documentation"
               when "simp-metadata"
-                subdirectory = "simp/metadata"
+                subdirectory = "SIMP/metadata"
                 outputpath = "#{@repopath}/#{subdirectory}/#{component.name}"
                 FileUtils.mkdir_p(outputpath)
                 if (Dir.exists?("#{fetch_return_value['path']}/.git"))
@@ -69,7 +71,7 @@ module Simp
                   error "unable to copy #{component.name} to #{outputpath}: error code #{exit_code.exitstatus}"
                 end
               when "puppet-module"
-                subdirectory = "simp/modules"
+                subdirectory = "SIMP/modules"
                 outputpath = "#{@repopath}/#{subdirectory}/#{component.module_name}"
                 debug2("Copying #{component.module_name} to #{outputpath}")
                 FileUtils.mkdir_p(outputpath)
@@ -78,7 +80,7 @@ module Simp
                   error "unable to copy #{component.module_name} to #{outputpath}: error code #{exit_code.exitstatus}"
                 end
               else
-                subdirectory = "simp/assets"
+                subdirectory = "SIMP/assets/#{component.name}"
                 case component.output_type
                   when :file
                     FileUtils.mkdir_p("#{@repopath}/#{subdirectory}")
@@ -109,7 +111,7 @@ module Simp
         end
 
         def munge_environmentconf(environmentconf)
-          # Munge environment.conf to add simp/modules to modulepath
+          # Munge environment.conf to add SIMP/modules to modulepath
           if (File.exists?(environmentconf))
             data = File.read(environmentconf).split("\n")
             data.each_with_index do |line, fileline|
@@ -130,7 +132,7 @@ module Simp
                   paths.each do |path, index|
                     newarray << path
                     if (index == module_index)
-                      newarray << "simp/modules"
+                      newarray << "SIMP/modules"
                     end
                   end
                   data[fileline] = "modulepath = #{newarray.join(":")}"
@@ -139,7 +141,7 @@ module Simp
               end
             end
           else
-            File.open(environmentconf, "w") { |f| f.write("modulepath = modules:simp/modules:$basemodulepath\n") }
+            File.open(environmentconf, "w") { |f| f.write("modulepath = modules:SIMP/modules:$basemodulepath\n") }
           end
         end
 
