@@ -12,7 +12,6 @@ module Simp
             opts.banner = "Usage: simp-metadata search <attribute>=<value>\n(supports multiple attributes as well as encoded URLs)"
           end
 
-
           engine, root = get_engine(engine, options)
           begin
             data = {}
@@ -33,7 +32,18 @@ module Simp
                 end
               end
               engine.components.each do |component|
-                if data.all? {|key, value| component[key] == value or component[key] == CGI.unescape(value)}
+
+                result = data.all? do |key, value|
+                  if key == "url"
+                    component.locations.any? do |location|
+                      location.url == value or location.url == CGI.unescape(value)
+                    end
+                  else
+                    component[key] == value or component[key] == CGI.unescape(value)
+                  end
+                end
+
+                if result
                   puts component.name
                 end
               end
