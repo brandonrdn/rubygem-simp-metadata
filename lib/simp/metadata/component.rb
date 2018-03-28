@@ -249,6 +249,30 @@ module Simp
         return ver
       end
 
+      def rpm_basename
+        if component_type == 'puppet-module'
+          if name.match(/pupmod-*/)
+            "#{name}"
+          else
+            "pupmod-#{name}"
+          end
+        else
+          "#{name}"
+        end
+      end
+
+      def rpm_version
+        if version.match(/[v][0-9]+.[0-9]+.[0-9]+/)
+          version.split('v')[1]
+        else
+          version
+        end
+      end
+
+      def rpm_name
+        "#{rpm_basename}-#{rpm_version}.rpm"
+      end
+
       def compiled?
         if get_from_release.key?("compiled")
           get_from_release["compiled"]
