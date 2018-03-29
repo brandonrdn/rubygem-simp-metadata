@@ -23,17 +23,6 @@ module Simp
           when "enterprise"
             @data = {
                 "components" => {
-                    "simp-metadata" => {
-                        "component-type" => "simp-metadata",
-                        "authoritative" => true,
-                        "locations" => [
-                            {
-                                "url" => "https://github.com/simp/simp-metadata",
-                                "method" => "git",
-                                "primary" => true,
-                            }
-                        ],
-                    },
                     "enterprise-metadata" => {
                         "component-type" => "simp-metadata",
                         "authoritative" => true,
@@ -45,7 +34,18 @@ module Simp
                                 "primary" => true,
                             }
                         ]
-                    }
+                    },
+                    "simp-metadata" => {
+                        "component-type" => "simp-metadata",
+                        "authoritative" => true,
+                        "locations" => [
+                            {
+                                "url" => "https://github.com/simp/simp-metadata",
+                                "method" => "git",
+                                "primary" => true,
+                            }
+                        ],
+                    },
                 }
             }
           when "enterprise-only"
@@ -89,11 +89,11 @@ module Simp
         case edition
           when "enterprise"
             {
-                "simp-metadata" => {
-                    "branch" => "master"
-                },
                 "enterprise-metadata" => {
                     "version" => "master",
+                },
+                "simp-metadata" => {
+                  "branch" => "master"
                 }
             }
           when "enterprise-only"

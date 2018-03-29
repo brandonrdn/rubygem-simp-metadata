@@ -34,10 +34,12 @@ module Simp
           if (source.releases.key?(release_version))
             if (source.releases[release_version].key?(self.name))
               retval = source
+              break
             end
           else
             if (source.release(release_version).key?(self.name))
               retval = source
+              break
             end
           end
         end
