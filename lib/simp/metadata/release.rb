@@ -13,6 +13,7 @@ module Simp
       def components(type = nil)
         Simp::Metadata::Components.new(engine, version, type)
       end
+
       def puppetfile_component(component, options)
         contents = []
         contents << "mod '#{component.name}',"
@@ -25,6 +26,7 @@ module Simp
         contents << ""
         contents
       end
+
       def puppetfile(options = {})
         contents = []
         if (options["type"] == "simp-core")
@@ -56,10 +58,62 @@ module Simp
         end
         contents.join("\n")
       end
+
       def to_s()
         self.components.to_s
+      end
+
+      def diff(compare_release, attribute)
+        diff = {}
+
+        current_hash = {}
+        compare_hash = {}
+        self.components.each do |comp|
+          self_component_hash = {}
+          comp.each do |key, value|
+            if (attribute != nil)
+              if (key.to_s == attribute)
+                self_component_hash[key] = value.to_s
+              end
+            else
+              self_component_hash[key] = value.to_s
+            end
+            current_hash[comp.name] = self_component_hash
+          end
+        end
+
+        compare_release.components.each do |comp|
+          self_component_hash = {}
+          comp.each do |key, value|
+            if (attribute != nil)
+              if (key.to_s == attribute)
+                self_component_hash[key] = value.to_s
+              end
+            else
+              self_component_hash[key] = value.to_s
+            end
+            compare_hash[comp.name] = self_component_hash
+          end
+        end
+        current_hash.each do |comp, hash|
+
+          diff_hash = {}
+          hash.each do |key, value|
+            if (compare_hash.key?(comp))
+              if (compare_hash[comp][key] != value)
+                diff_hash[key] = {
+                    "original" => "#{value}",
+                    "changed" => "#{compare_hash[comp][key]}"
+                }
+              end
+            end
+          end
+          unless diff_hash.empty?
+            diff[comp] = diff_hash
+          end
+        end
+        return diff
       end
     end
   end
 end
-

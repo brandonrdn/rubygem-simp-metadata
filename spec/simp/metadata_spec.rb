@@ -1,4 +1,4 @@
-require 'spec_helper'
+ require 'spec_helper'
 require 'simp/metadata'
 
 shared_examples_for "log_wrapper" do |method_name|

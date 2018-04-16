@@ -117,9 +117,11 @@ module Simp
             get_from_component["asset_name"]
         end
       end
+
       def module_name
         asset_name
       end
+
       def asset_name
         if (self.real_asset_name == nil)
           case self.component_type
@@ -286,7 +288,59 @@ module Simp
       def binaryname
         "#{asset_name}-#{version}.#{extension}"
       end
+
+      def view(attribute)
+        comp = self
+        view_hash = {}
+        if attribute.nil?
+          comp.each do |key, value|
+            unless value.nil? or value == ""
+              view_hash[key] = value.to_s
+            end
+          end
+          location_hash = {}
+          comp.locations.each do |location|
+            location.each do |key, value|
+              unless value.nil?
+                location_hash.merge!(key => value.to_s)
+              end
+            end
+          end
+          view_hash['location'] = location_hash
+        else
+          view_hash[attribute] = comp[attribute].to_s
+        end
+        return view_hash
+      end
+
+      def diff(component, attribute)
+        diff = {}
+
+        if attribute.nil?
+          current_hash = {}
+          comp_hash = {}
+          self.each do |attribute, value|
+            current_hash.merge!(attribute => value)
+          end
+          component.each do |attribute, value|
+            comp_hash.merge!(attribute => value)
+          end
+          unless current_hash == comp_hash
+            current_hash.each do |attribute, value|
+              diff[attribute] = {"original" => "#{current_hash[attribute]}",
+                                 "changed" => "#{comp_hash[attribute]}"} if comp_hash[attribute] != value
+            end
+          end
+          return diff
+        else
+          v1 = self["#{attribute}"]
+          v2 = component["#{attribute}"]
+          unless (v1 == v2)
+            diff[attribute] = {"original" => "#{v1}", "changed" => "#{v2}"}
+            return diff
+          end
+        end
+      end
     end
   end
 end
-
