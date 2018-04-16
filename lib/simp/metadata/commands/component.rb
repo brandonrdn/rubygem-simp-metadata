@@ -96,7 +96,7 @@ module Simp
             end
 
             if (root == true)
-              engine.save
+              engine.save((["simp-metadata", "component"] + argv).join(" "))
             end
           rescue RuntimeError => e
             Simp::Metadata.critical(e.message)

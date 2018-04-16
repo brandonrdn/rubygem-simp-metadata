@@ -13,7 +13,7 @@ module Simp
           begin
             engine.releases.create(argv[1], argv[0])
             if (root == true)
-              engine.save
+              engine.save((["simp-metadata", "clone"] + argv).join(" "))
             end
           rescue RuntimeError => e
             Simp::Metadata.critical(e.message)
