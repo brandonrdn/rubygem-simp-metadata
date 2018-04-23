@@ -16,6 +16,9 @@ module Simp
             case section
               when "components"
                 puts engine.releases[options["release"]].components.keys.join("\n")
+              when "puppetfile"
+                type = argv[1]
+                puts engine.releases[options["release"]].puppetfile({ "type" => type})
               else
                 puts "components:"
                 engine.releases[options["release"]].components.keys.each do |line|
