@@ -1,6 +1,7 @@
 module Simp
   module Metadata
     class Component
+      include Enumerable
       attr_accessor :engine
       attr_accessor :name
       attr_accessor :release_version
@@ -44,6 +45,21 @@ module Simp
           end
         end
         return retval
+      end
+
+      #
+      # Will be used to grab method based data in the future, rather
+      # then calling get_from_release or get_from_component directly,
+      #
+      # For now, just use it in Simp::Metadata::Buildinfo
+      def fetch_data(item)
+         component = get_from_component
+         release = get_from_release
+         if (release.key?(item))
+           release[item]
+         else
+           component[item]
+         end
       end
 
       def get_from_component()
@@ -306,6 +322,11 @@ module Simp
               end
             end
           end
+          buildinfo_hash = {}
+          comp.buildinfo.each do |buildinfo|
+            buildinfo.each do |key, value|
+            end
+          end
           view_hash['location'] = location_hash
         else
           view_hash[attribute] = comp[attribute].to_s
@@ -339,6 +360,13 @@ module Simp
             diff[attribute] = {"original" => "#{v1}", "changed" => "#{v2}"}
             return diff
           end
+        end
+      end
+      def buildinfo(type = nil)
+        if (type == nil)
+          {}
+        else
+          Simp::Metadata::Buildinfo.new(self, type)
         end
       end
     end
