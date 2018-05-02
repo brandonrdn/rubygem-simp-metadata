@@ -80,5 +80,4 @@ build-gem:
     - 'rm .gem_version || true'
     - bundle install --path=/cache
     - bundle update
-    - bundle exec rake yard
     - bundle exec rake build
