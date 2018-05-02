@@ -1,21 +1,85 @@
 stages:
-        - pre-build-testing
-        - build
-        - test
-        - deploy
-        - notify
-ruby-spec-test:
-         stage: pre-build-testing
-         tags:
-                 - docker
-         image: ruby:2.1
-         artifacts:
-                 paths:
-                         - 'coverage/*'
-         script:
-                 - apt-get update
-                 - apt-get install -y gcc make
-                 - export JAVA_OPTS="-XX:+UseG1GC -XX:+UseStringDeduplication"
-                 - bundle install
-                 - bundle update
-                 - bundle exec rake spec
+  - lint
+  - pre-build-testing
+  - build
+
+rubocop:
+  stage: lint
+  tags:
+    - docker
+  image: ruby:2.2
+  artifacts:
+    when: always
+    paths:
+      - 'coverage'
+  script:
+    - bundle install --path=/cache
+    - bundle update
+    - bundle exec rubocop
+reek:
+  stage: lint
+  tags:
+    - docker
+  image: ruby:2.2
+  artifacts:
+    when: always
+    paths:
+      - 'coverage'
+  script:
+    - bundle install --path=/cache
+    - bundle update
+    - bundle exec rake reek
+yardstick:
+  stage: lint
+  tags:
+    - docker
+  image: ruby:2.2
+  script:
+    - bundle install --path=/cache
+    - bundle update
+    - bundle exec rake yardstick_measure
+    - bundle exec rake yardstick_verify
+
+ruby-2.2-unit-test:
+  stage: pre-build-testing
+  tags:
+    - docker
+  image: ruby:2.2
+  artifacts:
+    when: always
+    paths:
+      - 'coverage'
+  script:
+    - bundle install --path=/cache
+    - bundle update
+    - bundle exec rake spec
+    - bundle exec rubocop
+ruby-2.4-unit-test:
+  stage: pre-build-testing
+  tags:
+    - docker
+  image: ruby:2.4
+  artifacts:
+    when: always
+    paths:
+      - 'coverage'
+  script:
+    - bundle install --path=/cache
+    - bundle update
+    - bundle exec rake spec
+build-gem:
+  stage: build
+  tags:
+    - docker
+  image: ruby:2.4
+  artifacts:
+    paths:
+      - 'pkg'
+      - 'coverage'
+      - 'doc'
+  script:
+    - 'rm .gem_version || true'
+    - bundle install --path=/cache
+    - bundle update
+    - bundle exec rake yard
+    - bundle exec rake build
