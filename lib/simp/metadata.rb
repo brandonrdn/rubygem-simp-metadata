@@ -17,6 +17,7 @@ require 'simp/metadata/release'
 
 require 'simp/metadata/components'
 require 'simp/metadata/component'
+require 'simp/metadata/buildinfo'
 
 require 'simp/metadata/locations'
 require 'simp/metadata/location'

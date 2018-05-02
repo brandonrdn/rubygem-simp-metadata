@@ -13,7 +13,7 @@ module Simp
           begin
             engine.releases.delete(argv[0])
             if (root == true)
-              engine.save
+              engine.save((["simp-metadata", "delete"] + argv).join(" "))
             end
           rescue RuntimeError => e
             Simp::Metadata.critical(e.message)

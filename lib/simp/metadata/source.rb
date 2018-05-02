@@ -135,10 +135,10 @@ module Simp
                 directory = "nightlies"
               when /develop/
                 directory = "channels"
+              when /development/
+                directory = "channels"
               when /master/
                 directory = "channels"
-              when "test-stub"
-                directory = "unit"
               when /^test\-/
                 directory = "tests"
               else

@@ -12,7 +12,7 @@ module Simp
             case subcommand
               when "--help", "-h"
                 options = defaults(argv) do |opts|
-                  opts.banner = "Usage: simp-metadata component [ create | view | update ]"
+                  opts.banner = "Usage: simp-metadata component [ create | view | update | diff ]"
                 end
               when "create"
                 options = defaults(argv) do |opts|
@@ -59,6 +59,7 @@ module Simp
                   Simp::Metadata.critical("#{setting} is a read-only setting")
                   exit 6
                 end
+
               when "view"
                 options = defaults(argv) do |opts|
                   opts.banner = "Usage: simp-metadata component view <component> [attribute]"
@@ -72,31 +73,30 @@ module Simp
                   else
                     comp = engine.releases[options["release"]].components[component]
                   end
-                  if attribute.nil?
-                    comp.each do |key, value|
-                      unless value.nil? or value == ""
-                        puts "#{key}: #{value}"
-                      end
-                    end
-                    puts "location:"
-                    comp.locations.each do |location|
-                      location.each do |key, value|
-                        unless value.nil?
-                          puts "  #{key}: #{value}"
-                        end
-                      end
-                    end
-                  else
-                    puts comp[attribute]
-                  end
+                  view = comp.view(attribute)
+                  puts view.to_yaml
                 else
-                  Simp::Metadata.critical("Unable to find component named '#{component}'")
+                  Simp::Metadata.critical("Unable to find component named #{component}")
                   exit 5
                 end
+
+              when "diff"
+                options = defaults(argv) do |opts|
+                  opts.banner = "Usage: simp-metadata component diff <release1> <release2> <component> [attribute]"
+                end
+                engine, root = get_engine(engine, options)
+                release1 = argv[1]
+                release2 = argv[2]
+                component = argv[3]
+                attribute = argv[4]
+                component1 = engine.releases[release1].components[component]
+                component2 = engine.releases[release2].components[component]
+                diff = component1.diff(component2, attribute)
+                puts diff.to_yaml
             end
 
             if (root == true)
-              engine.save
+              engine.save((["simp-metadata", "component"] + argv).join(" "))
             end
           rescue RuntimeError => e
             Simp::Metadata.critical(e.message)
