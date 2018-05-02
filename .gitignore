@@ -1,6 +1,6 @@
 /scratch
 /vendor
-.yarddoc
+.yardoc
 .bundle
 *.swp
 config.yaml
