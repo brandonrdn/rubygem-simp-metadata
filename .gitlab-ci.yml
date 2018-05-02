@@ -53,7 +53,6 @@ ruby-2.2-unit-test:
     - bundle install --path=/cache
     - bundle update
     - bundle exec rake spec
-    - bundle exec rubocop
 ruby-2.4-unit-test:
   stage: pre-build-testing
   tags:
