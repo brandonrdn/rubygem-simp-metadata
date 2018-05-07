@@ -133,6 +133,8 @@ module Simp
                 directory = "prereleases"
               when /^nightly\-/
                 directory = "nightlies"
+              when /unstable/
+                directory = "channels"
               when /develop/
                 directory = "channels"
               when /development/

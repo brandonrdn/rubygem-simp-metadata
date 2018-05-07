@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 gemspec
-#gem 'pry'
-#gem 'pry-byebug'
+gem 'pry'
+gem 'pry-byebug'
 gem 'guard-rspec'
 # General gems
 gem 'rubocop', '~> 0.41.2', require: false

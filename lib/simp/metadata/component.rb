@@ -199,6 +199,10 @@ module Simp
       end
 
       def component_type
+        if (name == "filebeat-linux")
+          require 'pry'
+          binding.pry
+        end
         get_from_component["component-type"]
       end
 
@@ -227,7 +231,7 @@ module Simp
       end
 
       def branch
-        get_from_release["branch"]
+        fetch_data("branch")
       end
 
       def branch=(value)

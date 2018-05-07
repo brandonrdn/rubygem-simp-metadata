@@ -4,10 +4,14 @@ module Simp
     module Commands
       class Release < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
-
+          settings = {}
           options = defaults(argv) do |opts|
             opts.banner = "Usage: simp-metadata release <release_name> [components]"
             opts.banner = "       simp-metadata release diff <release1> <release2>"
+
+            opts.on("-k", "--key [branch|ref|tag]", "Use branch, ref, or tag in the puppetfile") do |opt|
+              settings["key"] = opt
+            end
           end
 
 
@@ -20,7 +24,7 @@ module Simp
 
               when "puppetfile"
                 type = argv[1]
-                puts engine.releases[options["release"]].puppetfile({ "type" => type})
+                puts engine.releases[options["release"]].puppetfile({ "type" => type}.merge(settings))
 
               when "diff"
                 release1 = argv[1]

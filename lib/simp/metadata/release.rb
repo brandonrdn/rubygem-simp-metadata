@@ -18,10 +18,37 @@ module Simp
         contents = []
         contents << "mod '#{component.name}',"
         contents << "  :git => '#{component.primary.url}',"
+
+        if (options["key"] == nil)
         if (component.ref == nil)
           contents << "  :tag => '#{component.tag}'"
         else
           contents << "  :ref => '#{component.ref}'"
+        end
+        else
+          case options["key"]
+            when "tag"
+
+              unless (component.tag == nil)
+                contents << "  :tag => '#{component.tag}'"
+              else
+                contents << "  :ref => '#{component.ref}'"
+              end
+            when "ref"
+              contents << "  :ref => '#{component.ref}'"
+            when "branch"
+              unless (component.branch == nil)
+                contents << "  :branch => '#{component.branch}'"
+              else
+                contents << "  :ref => '#{component.ref}'"
+              end
+            when nil
+              if (component.ref == nil)
+                contents << "  :tag => '#{component.tag}'"
+              else
+                contents << "  :ref => '#{component.ref}'"
+              end
+          end
         end
         contents << ""
         contents
@@ -81,8 +108,8 @@ module Simp
             current_hash[comp.name] = self_component_hash
           end
         end
-
         compare_release.components.each do |comp|
+
           self_component_hash = {}
           comp.each do |key, value|
             if (attribute != nil)
@@ -92,6 +119,7 @@ module Simp
             else
               self_component_hash[key] = value.to_s
             end
+
             compare_hash[comp.name] = self_component_hash
           end
         end

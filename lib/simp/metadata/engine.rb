@@ -9,6 +9,18 @@ module Simp
 
       def initialize(cachepath = nil, metadatarepos = nil, edition = "community", options = {})
 
+        if (metadatarepos == nil)
+          if (ENV.fetch('SIMP_METADATA_WRITABLE_URLS', nil) != nil)
+            metadatarepos = {}
+            array = ENV['SIMP_METADATA_WRITABLE_URLS'].split(',')
+            elements = array.size / 2;
+            (0...elements).each do |offset|
+              comp = array[offset * 2]
+              url = array[(offset * 2) + 1]
+              metadatarepos[comp] = url
+            end
+          end
+        end
         ENV['GIT_SSH'] = "#{File.dirname(__FILE__)}/git_ssh_wrapper.sh"
         if (options["ssh_key"] != nil)
           ENV['SIMP_METADATA_SSHKEY'] = "#{options["ssh_key"]}"
