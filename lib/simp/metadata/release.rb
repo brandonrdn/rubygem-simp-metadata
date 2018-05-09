@@ -16,7 +16,7 @@ module Simp
 
       def puppetfile_component(component, options)
         contents = []
-        contents << "mod '#{component.name}',"
+        contents << "mod '#{component.name("puppetfile")}',"
         contents << "  :git => '#{component.primary.url}',"
         if (component.ref == nil)
           contents << "  :tag => '#{component.tag}'"
