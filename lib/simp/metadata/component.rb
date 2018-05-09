@@ -3,7 +3,6 @@ module Simp
     class Component
       include Enumerable
       attr_accessor :engine
-      attr_accessor :name
       attr_accessor :release_version
 
       def initialize(engine, name, version)
@@ -14,6 +13,21 @@ module Simp
 
       def to_s
         self.name
+      end
+
+      def name(type = "component")
+        case type
+          when "component"
+            @name
+          when "puppetfile"
+            if (component_type == "rubygem")
+              "rubygem-#{@name.gsub(/\-/, '_')}"
+            elsif (component_type == "puppet-module")
+              @name.gsub(/pupmod\-/, '')
+            else
+              @name
+            end
+        end
       end
 
       def component_source()
