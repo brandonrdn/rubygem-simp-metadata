@@ -24,7 +24,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'yard-sinatra'
   s.add_development_dependency 'yardstick'
   s.add_development_dependency 'reek'
-  s.add_runtime_dependency 'rspec-command'
-  s.add_runtime_dependency 'rubocop'
-  s.add_runtime_dependency 'simplecov'
+  s.add_development_dependency 'rspec-command'
+  s.add_development_dependency 'rubocop'
+  s.add_development_dependency 'simplecov'
 end
