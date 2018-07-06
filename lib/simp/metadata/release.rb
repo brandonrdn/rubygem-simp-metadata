@@ -33,17 +33,12 @@ module Simp
           contents << "moduledir 'src'"
           contents << ""
           contents << puppetfile_component(components['simp-doc'], options)
-          contents << puppetfile_component(components['simp-rsync'], options)
           contents << "moduledir 'src/assets'"
           contents << ""
           components.each do |component|
             if (component.component_type == "rpm")
               contents << puppetfile_component(component, options)
             end
-          end
-          contents << "moduledir 'src/rubygems'"
-          contents << ""
-          components.each do |component|
             if (component.component_type == "rubygem")
               contents << puppetfile_component(component, options)
             end
