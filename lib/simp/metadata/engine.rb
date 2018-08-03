@@ -2,9 +2,11 @@
 require 'tmpdir'
 require 'simp/metadata'
 
+
 module Simp
   module Metadata
     class Engine
+      attr_accessor :options
       attr_accessor :sources
 
       def initialize(cachepath = nil, metadatarepos = nil, edition = "community", options = {})
@@ -13,6 +15,7 @@ module Simp
         if (options["ssh_key"] != nil)
           ENV['SIMP_METADATA_SSHKEY'] = "#{options["ssh_key"]}"
         end
+        @options = options
         @sources = {}
         @writable_source = "simp-metadata"
         priority = 0
