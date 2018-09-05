@@ -5,10 +5,12 @@ module Simp
       class Base
         attr_accessor :engine
         attr_accessor :options
+
         def initialize(options, engine)
           @options = options
           @engine = engine
         end
+
         def debug2(output)
           engine.debug2(output)
         end
@@ -32,9 +34,10 @@ module Simp
         def critical(output)
           engine.critical(output)
         end
+
         def run(command)
           exitcode = nil
-          Open3.popen3(command) do |stdin, stdout, stderr, thread|
+          Open3.popen3(command) do |_stdin, stdout, stderr, thread|
             pid = thread.pid
             debug1(stdout.read.chomp)
             debug1(stderr.read.chomp)
@@ -42,19 +45,24 @@ module Simp
           end
           exitcode
         end
+
         def target_directory
           nil
         end
+
         def cleanup
           true
         end
-        def fetch_component(component, options)
+
+        def fetch_component(_component, _options)
           raise '`fetch_component` not implemented'
         end
-        def add_component(component, options)
+
+        def add_component(_component, _options)
           raise '`add_component` not implemented'
         end
-        def finalize()
+
+        def finalize
           raise '`finalize` not implemented'
         end
       end

@@ -2,7 +2,7 @@
 
 begin
   require 'simp/metadata/command'
-  command = Simp::Metadata::Command.new()
+  command = Simp::Metadata::Command.new
   command.run(ARGV)
 
 end

@@ -12,16 +12,16 @@ module Simp
         @type = type
       end
 
-      def to_s()
-        self.keys.to_s
+      def to_s
+        keys.to_s
       end
 
-      def size()
-        self.keys.size
+      def size
+        keys.size
       end
 
-      def each(&block)
-        self.keys.each do |version|
+      def each
+        keys.each do |version|
           yield self[version]
         end
       end
@@ -31,25 +31,25 @@ module Simp
       end
 
       def key?(name)
-        self.keys.include?(name)
+        keys.include?(name)
       end
 
-      def keys()
+      def keys
         result = {}
-        if (version == nil)
-          engine.sources.each do |name, source|
+        if version.nil?
+          engine.sources.each do |_name, source|
             source.components.keys.each do |name|
               result[name] = true
             end
           end
         else
-          engine.sources.each do |name, source|
-            if (source.releases.key?(version))
-              source.releases[version].each do |component, data|
+          engine.sources.each do |_name, source|
+            if source.releases.key?(version)
+              source.releases[version].each do |component, _data|
                 result[component] = true
               end
             else
-              source.release(version).each do |component, data|
+              source.release(version).each do |component, _data|
                 result[component] = true
               end
             end
@@ -59,7 +59,7 @@ module Simp
       end
 
       def create(name, settings = {})
-        unless (self.key?(name))
+        unless key?(name)
           engine.writable_source.components[name] = settings
           engine.writable_source.dirty = true
         end
@@ -67,4 +67,3 @@ module Simp
     end
   end
 end
-

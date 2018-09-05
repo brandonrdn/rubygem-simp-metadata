@@ -12,17 +12,17 @@ module Simp
       end
 
       def to_s
-        self.name
+        name
       end
 
-      def name(type = "component")
+      def name(type = 'component')
         case type
-        when "component"
+        when 'component'
           @name
-        when "puppetfile"
-          if (component_type == "rubygem")
-            "rubygem-#{@name.gsub(/-/, '_')}"
-          elsif (component_type == "puppet-module")
+        when 'puppetfile'
+          if component_type == 'rubygem'
+            "rubygem-#{@name.tr('-', '_')}"
+          elsif component_type == 'puppet-module'
             @name.gsub(/pupmod-/, '')
           else
             @name
@@ -32,35 +32,34 @@ module Simp
         end
       end
 
-      def component_source()
-        retval = engine.sources["bootstrap_metadata"]
-        engine.sources.each do |name, source|
-          if (source.components != nil)
-            if (source.components.key?(self.name))
-              retval = source
-              break
-            end
+      def component_source
+        retval = engine.sources['bootstrap_metadata']
+        engine.sources.each do |_name, source|
+          next if source.components.nil?
+          if source.components.key?(name)
+            retval = source
+            break
           end
         end
-        return retval
+        retval
       end
 
-      def release_source()
-        retval = engine.sources["bootstrap_metadata"]
-        engine.sources.each do |name, source|
-          if (source.releases.key?(release_version))
-            if (source.releases[release_version].key?(self.name))
+      def release_source
+        retval = engine.sources['bootstrap_metadata']
+        engine.sources.each do |_name, source|
+          if source.releases.key?(release_version)
+            if source.releases[release_version].key?(name)
               retval = source
               break
             end
           else
-            if (source.release(release_version).key?(self.name))
+            if source.release(release_version).key?(name)
               retval = source
               break
             end
           end
         end
-        return retval
+        retval
       end
 
       #
@@ -71,82 +70,82 @@ module Simp
       def fetch_data(item)
         component = get_from_component
         release = get_from_release
-        if (release.key?(item))
+        if release.key?(item)
           release[item]
         else
           component[item]
         end
       end
 
-      def get_from_component()
-        return self.component_source.components[self.name]
+      def get_from_component
+        component_source.components[name]
       end
 
-      def get_from_release()
+      def get_from_release
         retval = {}
-        if (self.release_source.releases.key?(release_version))
-          if (self.release_source.releases[release_version].key?(self.name))
-            retval = self.release_source.releases[release_version][self.name]
+        if release_source.releases.key?(release_version)
+          if release_source.releases[release_version].key?(name)
+            retval = release_source.releases[release_version][name]
           end
         else
-          if (self.release_source.release(release_version).key?(self.name))
-            retval = self.release_source.release(release_version)[self.name]
+          if release_source.release(release_version).key?(name)
+            retval = release_source.release(release_version)[name]
           end
         end
-        return retval
+        retval
       end
 
       def type
-        get_from_component["type"]
+        get_from_component['type']
       end
 
       def extension
-        if (self.real_extension == nil)
-          case (self.component_type)
-          when "simp-metadata"
-            "tgz"
-          when "logstash-filter"
-            "gem"
-          when "rubygem"
-            "gem"
-          when "grafana-plugin"
-            "zip"
-          when "puppet-module"
-            "tgz"
+        if real_extension.nil?
+          case component_type
+          when 'simp-metadata'
+            'tgz'
+          when 'logstash-filter'
+            'gem'
+          when 'rubygem'
+            'gem'
+          when 'grafana-plugin'
+            'zip'
+          when 'puppet-module'
+            'tgz'
           else
-            ""
+            ''
           end
         else
-          self.real_extension
+          real_extension
         end
       end
 
-      def keys()
-        ["component_type", "authoritative", "asset_name", "extension", "format", "module_name", "type", "url", "method", "extract", "branch", "tag", "ref", "version", "release_source", "component_source", "target", "revision"]
+      def keys
+        %w(component_type authoritative asset_name extension format module_name type url method extract branch tag ref version release_source component_source target revision)
       end
 
-      def [] (index)
-        self.send index.to_sym
+      def [](index)
+        send index.to_sym
       end
 
-      def each(&block)
-        self.keys.each do |key|
+      def each
+        keys.each do |key|
           yield key, self[key]
         end
       end
 
       def real_extension
-        get_from_component["extension"]
+        get_from_component['extension']
       end
 
       def real_asset_name
-        case self.component_type
-        when "puppet-module"
-          get_from_component["module_name"]
-        when "rubygem"
-          get_from_component["gem_name"]
+        case component_type
+        when 'puppet-module'
+          get_from_component['module_name']
+        when 'rubygem'
+          get_from_component['gem_name']
         else
-          get_from_component["asset_name"]
+          get_from_component['asset_name']
         end
       end
 
@@ -155,171 +154,169 @@ module Simp
       end
 
       def asset_name
-        if (self.real_asset_name == nil)
-          case self.component_type
-          when "puppet-module"
-            splitted = self.name.split("-")
+        if real_asset_name.nil?
+          case component_type
+          when 'puppet-module'
+            splitted = name.split('-')
             splitted[splitted.size - 1]
           else
-            self.name
+            name
           end
         else
-          self.real_asset_name
+          real_asset_name
         end
       end
 
-
       def output_type
-        if (self.compiled?)
-          return :file
+        if compiled?
+          :file
         else
-          return :directory
+          :directory
         end
       end
 
       def output_filename
-        if (self.compiled?)
-          return "#{self.name}-#{self.version}.#{self.extension}"
+        if compiled?
+          "#{name}-#{version}.#{extension}"
         else
-          return self.name
+          name
         end
       end
 
       def primary
-        self.locations.primary
+        locations.primary
       end
 
       def url
-        self.locations.primary.url
+        locations.primary.url
       end
 
       def method
-        self.locations.primary.method
+        locations.primary.method
       end
 
       def extract
-        self.locations.primary.extract
+        locations.primary.extract
       end
 
       def locations
         # XXX: ToDo Allow manifest.yaml to override locations
         # XXX: ToDo Use primary_source and mirrors here if locations is empty
-        Simp::Metadata::Locations.new({"locations" => get_from_component["locations"], "primary_source" => get_from_component["primary_source"], "mirrors" => get_from_component["mirrors"]}, self)
+        Simp::Metadata::Locations.new({ 'locations' => get_from_component['locations'], 'primary_source' => get_from_component['primary_source'], 'mirrors' => get_from_component['mirrors'] }, self)
       end
 
       # XXX: ToDo Generate a filename, and output file type; ie, directory or file
 
-
       def format
-        get_from_component["format"]
+        get_from_component['format']
       end
 
       def component_type
-        get_from_component["component-type"]
+        get_from_component['component-type']
       end
 
       def authoritative?
-        get_from_component["authoritative"]
+        get_from_component['authoritative']
       end
 
       def authoritative
-        get_from_component["authoritative"]
+        get_from_component['authoritative']
       end
 
       def revision
-        revision = get_from_component["revision"]
+        revision = get_from_component['revision']
         if revision.nil?
-          "0"
+          '0'
         else
           revision
         end
       end
 
       def revision=(value)
-        release = self.release_source.releases[release_version]
-        if (release != nil)
-          if (release.key?(name))
-            release[name]["revision"] = value
+        release = release_source.releases[release_version]
+        unless release.nil?
+          if release.key?(name)
+            release[name]['revision'] = value
           else
-            release[name] = {"revision" => value}
+            release[name] = { 'revision' => value }
           end
         end
-        self.release_source.dirty = true
+        release_source.dirty = true
       end
 
       def ref
-        get_from_release["ref"]
+        get_from_release['ref']
       end
 
       def ref=(value)
-        release = self.release_source.releases[release_version]
-        if (release != nil)
-          if (release.key?(name))
-            release[name]["ref"] = value
+        release = release_source.releases[release_version]
+        unless release.nil?
+          if release.key?(name)
+            release[name]['ref'] = value
           else
-            release[name] = {"ref" => value}
+            release[name] = { 'ref' => value }
           end
         end
-        self.release_source.dirty = true
+        release_source.dirty = true
       end
 
       def branch
-        get_from_release["branch"]
+        get_from_release['branch']
       end
 
       def branch=(value)
-        release = self.release_source.releases[release_version]
-        if (release != nil)
-          if (release.key?(name))
-            release[name]["branch"] = value
+        release = release_source.releases[release_version]
+        unless release.nil?
+          if release.key?(name)
+            release[name]['branch'] = value
           else
-            release[name] = {"branch" => value}
+            release[name] = { 'branch' => value }
           end
         end
-        self.release_source.dirty = true
+        release_source.dirty = true
       end
 
       def tag
-        get_from_release["tag"]
+        get_from_release['tag']
       end
 
       def tag=(value)
-        release = self.release_source.releases[release_version]
-        if (release != nil)
-          if (release.key?(name))
-            release[name]["tag"] = value
+        release = release_source.releases[release_version]
+        unless release.nil?
+          if release.key?(name)
+            release[name]['tag'] = value
           else
-            release[name] = {"tag" => value}
+            release[name] = { 'tag' => value }
           end
         end
-        self.release_source.dirty = true
+        release_source.dirty = true
       end
 
       def version
-        ver = ""
-        ["version", "tag", "ref", "branch"].each do |item|
-          if (get_from_release[item] != nil)
+        ver = ''
+        %w(version tag ref branch).each do |item|
+          unless get_from_release[item].nil?
             ver = get_from_release[item]
             break
           end
         end
-        return ver
+        ver
       end
 
       def rpm_basename
         if component_type == 'puppet-module'
-          if name.match(/pupmod-*/)
-            "#{name}"
+          if name =~ /pupmod-*/
+            name.to_s
           else
             "pupmod-#{name}"
           end
         else
-          "#{name}"
+          name.to_s
         end
       end
 
       def component_version
-        if version.match(/^[v][0-9]/)
+        if version =~ /^[v][0-9]/
           version.split('v')[1]
         else
           version
@@ -327,46 +324,45 @@ module Simp
       end
 
       def rpm_version
-        if (component_version.match(/^[0-9]+.[0-9]+.[0-9]+.[0-9]+/))
+        if component_version =~ /^[0-9]+.[0-9]+.[0-9]+.[0-9]+/
           component_version
         else
           "#{component_version}-#{revision}"
         end
       end
 
-
       def target
-        target = get_from_release["target"]
+        target = get_from_release['target']
         if target.nil?
-          "noarch"
+          'noarch'
         else
           target
         end
       end
 
       def target=(value)
-        release = self.release_source.releases[release_version]
-        if (release != nil)
-          if (release.key?(name))
-            release[name]["target"] = value
+        release = release_source.releases[release_version]
+        unless release.nil?
+          if release.key?(name)
+            release[name]['target'] = value
           else
-            release[name] = {"target" => value}
+            release[name] = { 'target' => value }
           end
         end
-        self.release_source.dirty = true
+        release_source.dirty = true
       end
 
       def platform
-        platform = engine.options["platform"]
+        platform = engine.options['platform']
         if platform.nil?
-          "el7"
+          'el7'
         else
           platform
         end
       end
 
       def rpm_name
-        if self.component_type == 'puppet-module'
+        if component_type == 'puppet-module'
           "#{rpm_basename}-#{rpm_version}.#{target}.rpm"
         else
           "#{rpm_basename}-#{rpm_version}.#{platform}.#{target}.rpm"
@@ -374,8 +370,8 @@ module Simp
       end
 
       def compiled?
-        if get_from_release.key?("compiled")
-          get_from_release["compiled"]
+        if get_from_release.key?('compiled')
+          get_from_release['compiled']
         else
           false
         end
@@ -390,28 +386,25 @@ module Simp
         view_hash = {}
         if attribute.nil?
           comp.each do |key, value|
-            unless value.nil? or value == ""
-              view_hash[key] = value.to_s
-            end
+            view_hash[key] = value.to_s unless value.nil? || value == ''
           end
           location_hash = {}
           comp.locations.each do |location|
             location.each do |key, value|
-              unless value.nil?
-                location_hash.merge!(key => value.to_s)
-              end
+              location_hash.merge!(key => value.to_s) unless value.nil?
             end
           end
           buildinfo_hash = {}
           comp.buildinfo.each do |buildinfo|
-            buildinfo.each do |key, value|
+            # Needs to be fixed/added to
+            buildinfo.each do |_key, _value|
             end
           end
           view_hash['location'] = location_hash
         else
           view_hash[attribute] = comp[attribute].to_s
         end
-        return view_hash
+        view_hash
       end
 
       def diff(component, attribute)
@@ -420,31 +413,31 @@ module Simp
         if attribute.nil?
           current_hash = {}
           comp_hash = {}
-          self.each do |attribute, value|
-            current_hash.merge!(attribute => value)
+          each do |attr, value|
+            current_hash.merge!(attr => value)
           end
-          component.each do |attribute, value|
-            comp_hash.merge!(attribute => value)
+          component.each do |attr, value|
+            comp_hash.merge!(attr => value)
           end
           unless current_hash == comp_hash
-            current_hash.each do |attribute, value|
-              diff[attribute] = {"original" => "#{current_hash[attribute]}",
-                                 "changed" => "#{comp_hash[attribute]}"} if comp_hash[attribute] != value
+            current_hash.each do |attr, value|
+              diff[attr] = { 'original' => (current_hash[attr]).to_s,
+                             'changed' => (comp_hash[attr]).to_s } if comp_hash[attr] != value
             end
           end
-          return diff
+          diff
         else
-          v1 = self["#{attribute}"]
-          v2 = component["#{attribute}"]
-          unless (v1 == v2)
-            diff[attribute] = {"original" => "#{v1}", "changed" => "#{v2}"}
-            return diff
+          v1 = self[attribute.to_s]
+          v2 = component[attribute.to_s]
+          unless v1 == v2
+            diff[attribute] = { 'original' => v1.to_s, 'changed' => v2.to_s }
+            diff
           end
         end
       end
 
       def buildinfo(type = nil)
-        if (type == nil)
+        if type.nil?
           {}
         else
           Simp::Metadata::Buildinfo.new(self, type)
@@ -456,22 +449,22 @@ module Simp
         destination = currentdir if destination.nil?
         abort(Simp::Metadata.critical("File #{rpm_name} already exists in #{destination}. Please delete this file and re-run the command if you wish to replace it.")[0]) if File.exist?("#{destination}/#{rpm_name}")
 
-        #Create tmp dir and clone source
+        # Create tmp dir and clone source
         Dir.mktmpdir do |dir|
           Dir.chdir(dir.to_s) do
             system("git clone #{url} source > /dev/null")
-            Dir.chdir("source") do
+            Dir.chdir('source') do
               system("git checkout #{version}")
 
               # sanitize
-              excludes = %w('.git' '.gitignore')
-              if File.exist?("./.simp.yml")
-                config = YAML.load_file(".simp.yml")
-                if config.key?("sanitize")
-                  sanitize = config["sanitize"]
-                  excludes = excludes + [".simp.yml"] + sanitize["exclude"] if sanitize.key?("exclude")
-                  if sanitize.key?("scripts")
-                    sanitize["scripts"].each do |command|
+              excludes = %w(.git .gitignore)
+              if File.exist?('./.simp.yml')
+                config = YAML.load_file('.simp.yml')
+                if config.key?('sanitize')
+                  sanitize = config['sanitize']
+                  excludes = excludes + ['.simp.yml'] + sanitize['exclude'] if sanitize.key?('exclude')
+                  if sanitize.key?('scripts')
+                    sanitize['scripts'].each do |command|
                       puts `#{command}`
                     end
                   end
@@ -492,16 +485,16 @@ module Simp
 -s dir
 -t rpm
 --name '#{rpm_basename}'
---rpm-summary '#{metadata["name"].split('-')[1].capitalize} Puppet Module'
---description '#{metadata["summary"]}'
+--rpm-summary '#{metadata['name'].split('-')[1].capitalize} Puppet Module'
+--description '#{metadata['summary']}'
 --maintainer 'info@onyxpoint.com'
 --category Applications/System
 --prefix 'usr/share/simp/modules'
---url '#{metadata["source"]}'
+--url '#{metadata['source']}'
 --vendor "Onyx Point, Inc"
---license '#{metadata["license"]}'
+--license '#{metadata['license']}'
 --package '#{currentdir}/#{rpm_name}'
---version '#{metadata["version"]}'
+--version '#{metadata['version']}'
 --iteration '#{revision}'
 --architecture '#{target}'
 --verbose
@@ -510,7 +503,7 @@ module Simp
 --directories=/usr/share/simp/modules/#{module_name}
               HEREDOC
 
-              options = heredoc.gsub("\n", ' ')
+              options = heredoc.tr("\n", ' ')
 
               # Create RPM
               Dir.chdir(dir.to_s) do
@@ -524,15 +517,15 @@ module Simp
         FileUtils.move "#{currentdir}/#{rpm_name}", destination
       end
 
-      def download(destination, source)
+      def download(destination, src)
         destination = Dir.pwd if destination.nil?
         rpm_name = self.rpm_name
         return if File.exist?("#{destination}/#{rpm_name}")
         el_version = platform.split('el')[1]
-        if source.nil?
-          sources = %W("https://download.simp-project.com/SIMP/yum/simp6/el/#{el_version}/x86_64", "https://download.simp-project.com/SIMP/yum/unstable/el/#{el_version}/x86_64")
+        if src.nil?
+          sources = ["https://download.simp-project.com/SIMP/yum/simp6/el/#{el_version}/x86_64", "https://download.simp-project.com/SIMP/yum/unstable/el/#{el_version}/x86_64"]
         else
-          sources = ["#{source}"]
+          sources = [source.to_s]
         end
         sources.each do |source|
           if source =~ /^https?:/
@@ -546,7 +539,6 @@ module Simp
         end
         puts "Unable to fine #{rpm_name} from #{sources}"
       end
-
     end
   end
 end

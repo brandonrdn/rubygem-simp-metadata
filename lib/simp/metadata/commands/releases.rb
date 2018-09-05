@@ -4,11 +4,9 @@ module Simp
     module Commands
       class Releases < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
-
           options = defaults(argv) do |opts|
-            opts.banner = "Usage: simp-metadata releases"
+            opts.banner = 'Usage: simp-metadata releases'
           end
-
 
           engine, root = get_engine(engine, options)
           begin
