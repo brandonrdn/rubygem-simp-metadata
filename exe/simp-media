@@ -2,7 +2,7 @@
 
 begin
   require 'simp/media/command'
-  command = Simp::Media::Command.new()
+  command = Simp::Media::Command.new
   command.run(ARGV)
 
 end

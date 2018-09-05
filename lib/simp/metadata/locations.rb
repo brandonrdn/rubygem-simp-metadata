@@ -10,45 +10,43 @@ module Simp
         @component = component
       end
 
-      def data()
-        if (self.locationinfo["locations"] != nil)
-          self.locationinfo["locations"]
+      def data
+        if locationinfo['locations'].nil?
+          [locationinfo['primary_source']] + locationinfo['mirrors']
         else
-          [ self.locationinfo["primary_source"] ] + self.locationinfo["mirrors"]
+          locationinfo['locations']
         end
       end
 
-      def to_s()
-        self.data.to_s
+      def to_s
+        data.to_s
       end
 
-      def size()
-        self.data.size
+      def size
+        data.size
       end
 
-      def each(&block)
-          self.data.each_index do |location|
-            yield self[location]
-          end
+      def each
+        data.each_index do |location|
+          yield self[location]
+        end
       end
 
       def [](location)
-        Simp::Metadata::Location.new(locationinfo,data[location], component)
+        Simp::Metadata::Location.new(locationinfo, data[location], component)
       end
 
       def primary
-
-        retval = self.find { |i| i.primary == true }
-        if (retval == nil)
-          if (self.locationinfo.key?("primary_source"))
-            retval = Simp::Metadata::Location.new(self.locationinfo, self.locationinfo["primary_source"], component)
+        retval = find(&:primary)
+        if retval.nil?
+          if locationinfo.key?('primary_source')
+            retval = Simp::Metadata::Location.new(locationinfo, locationinfo['primary_source'], component)
           else
-            retval = self.first
+            retval = first
           end
         end
-        return retval
+        retval
       end
     end
   end
 end
-

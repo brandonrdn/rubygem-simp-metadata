@@ -14,48 +14,48 @@ module Simp
         Simp::Metadata::Components.new(engine, version, type)
       end
 
-      def puppetfile_component(component, options)
+      def puppetfile_component(component, _options)
         contents = []
-        contents << "mod '#{component.name("puppetfile")}',"
+        contents << "mod '#{component.name('puppetfile')}',"
         contents << "  :git => '#{component.primary.url}',"
-        if (component.ref == nil)
-          contents << "  :tag => '#{component.tag}'"
-        else
-          contents << "  :ref => '#{component.ref}'"
-        end
-        contents << ""
+        contents << if component.tag.nil?
+                      "  :ref => '#{component.ref}'"
+                    else
+                      "  :tag => '#{component.tag}'"
+                    end
+        contents << ''
         contents
       end
 
       def puppetfile(options = {})
         contents = []
-        if (options["type"] == "simp-core")
+        if options['type'] == 'simp-core'
           contents << "moduledir 'src'"
-          contents << ""
+          contents << ''
           contents << puppetfile_component(components['simp-doc'], options)
           contents << "moduledir 'src/assets'"
-          contents << ""
+          contents << ''
           components.each do |component|
-            if (component.component_type == "rpm")
+            if component.component_type == 'rpm'
               contents << puppetfile_component(component, options)
             end
-            if (component.component_type == "rubygem")
+            if component.component_type == 'rubygem'
               contents << puppetfile_component(component, options)
             end
           end
           contents << "moduledir 'src/puppet/modules'"
-          contents << ""
+          contents << ''
         end
         components.each do |component|
-          if (component.component_type == "puppet-module")
+          if component.component_type == 'puppet-module'
             contents << puppetfile_component(component, options)
           end
         end
         contents.join("\n")
       end
 
-      def to_s()
-        self.components.to_s
+      def to_s
+        components.to_s
       end
 
       def diff(compare_release, attribute)
@@ -63,13 +63,11 @@ module Simp
 
         current_hash = {}
         compare_hash = {}
-        self.components.each do |comp|
+        components.each do |comp|
           self_component_hash = {}
           comp.each do |key, value|
-            if (attribute != nil)
-              if (key.to_s == attribute)
-                self_component_hash[key] = value.to_s
-              end
+            if !attribute.nil?
+              self_component_hash[key] = value.to_s if key.to_s == attribute
             else
               self_component_hash[key] = value.to_s
             end
@@ -80,10 +78,8 @@ module Simp
         compare_release.components.each do |comp|
           self_component_hash = {}
           comp.each do |key, value|
-            if (attribute != nil)
-              if (key.to_s == attribute)
-                self_component_hash[key] = value.to_s
-              end
+            if !attribute.nil?
+              self_component_hash[key] = value.to_s if key.to_s == attribute
             else
               self_component_hash[key] = value.to_s
             end
@@ -91,23 +87,18 @@ module Simp
           end
         end
         current_hash.each do |comp, hash|
-
           diff_hash = {}
           hash.each do |key, value|
-            if (compare_hash.key?(comp))
-              if (compare_hash[comp][key] != value)
-                diff_hash[key] = {
-                    "original" => "#{value}",
-                    "changed" => "#{compare_hash[comp][key]}"
-                }
-              end
-            end
+            next unless compare_hash.key?(comp)
+            next unless compare_hash[comp][key] != value
+            diff_hash[key] = {
+              'original' => value.to_s,
+              'changed' => (compare_hash[comp][key]).to_s
+            }
           end
-          unless diff_hash.empty?
-            diff[comp] = diff_hash
-          end
+          diff[comp] = diff_hash unless diff_hash.empty?
         end
-        return diff
+        diff
       end
     end
   end

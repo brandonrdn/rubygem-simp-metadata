@@ -5,9 +5,7 @@ module Simp
   module Metadata
     module Commands
       class Search < Simp::Metadata::Commands::Base
-
         def run(argv, engine = nil)
-
           options = defaults(argv) do |opts|
             opts.banner = "Usage: simp-metadata search <attribute>=<value>\n(supports multiple attributes as well as encoded URLs)"
           end
@@ -16,43 +14,41 @@ module Simp
           begin
             data = {}
             argv.each do |argument|
-              splitted = argument.split("=")
+              splitted = argument.split('=')
               name = splitted[0]
               value = splitted[1]
               case name
-                when name
-                  data[name] = value
+              when name
+                data[name] = value
               end
             end
-            unless (data == {}) or data.nil?
+
+            if (data == {}) || data.nil?
+              puts 'No search parameters specified'
+            else
               data.each do |key, value|
-                if value == "" or value.nil?
+                if value == '' || value.nil?
                   puts "No value specified for #{key}"
                   exit
                 end
               end
-              engine.components.each do |component|
 
+              engine.components.each do |component|
                 result = data.all? do |key, value|
-                  if key == "url"
+                  if key == 'url'
                     component.locations.any? do |location|
-                      location.url == value or location.url == CGI.unescape(value)
+                      location.url == value || location.url == CGI.unescape(value)
                     end
                   else
-                    component[key] == value or component[key] == CGI.unescape(value)
+                    component[key] == value || component[key] == CGI.unescape(value)
                   end
                 end
 
-                if result
-                  puts component.name
-                end
+                puts component.name if result
               end
-            else
-              puts "No search parameters specified"
             end
-            if (root == true)
-              engine.save
-            end
+
+            engine.save if root
           rescue RuntimeError => e
             Simp::Metadata.critical(e.message)
             exit 5
@@ -62,4 +58,3 @@ module Simp
     end
   end
 end
-

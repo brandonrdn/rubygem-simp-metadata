@@ -10,48 +10,48 @@ module Simp
         @component = component
       end
 
-      def keys()
-        ["type", "build_method"]
+      def keys
+        %w(type build_method)
       end
 
-      def [] (index)
-        self.send index.to_sym
+      def [](index)
+        send index.to_sym
       end
 
-      def each(&block)
-        self.keys.each do |key|
+      def each
+        keys.each do |key|
           yield key, self[key]
         end
       end
 
       def fetch_data
-        component.fetch_data("buildinfo")
+        component.fetch_data('buildinfo')
       end
 
       def method_defaults
         {
-            "rpm" => {
-                "build_method" => "simp-core",
-            }
+          'rpm' => {
+            'build_method' => 'simp-core'
+          }
         }
       end
 
-      def build_method()
-        buildinfo = self.fetch_data
-        if (buildinfo == nil)
-          retval = method_defaults[type]["build_method"]
+      def build_method
+        buildinfo = fetch_data
+        if buildinfo.nil?
+          retval = method_defaults[type]['build_method']
         else
-          if (buildinfo.key?(type))
-            if (buildinfo[type].key?("build_method"))
-              retval = buildinfo[type]["build_method"]
-            else
-              retval = method_defaults[type]["build_method"]
-            end
+          if buildinfo.key?(type)
+            retval = if buildinfo[type].key?('build_method')
+                       buildinfo[type]['build_method']
+                     else
+                       method_defaults[type]['build_method']
+                     end
           else
-            retval = method_defaults[type]["build_method"]
+            retval = method_defaults[type]['build_method']
           end
         end
-        return retval
+        retval
       end
     end
   end

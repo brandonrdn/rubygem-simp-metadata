@@ -10,8 +10,8 @@ module Simp
         @engine = engine
       end
 
-      def each(&block)
-        self.keys.each do |version|
+      def each
+        keys.each do |version|
           yield self[version]
         end
       end
@@ -20,9 +20,9 @@ module Simp
         Simp::Metadata::Release.new(engine, index)
       end
 
-      def keys()
+      def keys
         result = {}
-        engine.sources.each do |name, source|
+        engine.sources.each do |_name, source|
           source.releases.keys.each do |name|
             result[name] = true
           end
@@ -30,23 +30,23 @@ module Simp
         result.keys
       end
 
-      def size()
-        self.keys.size
+      def size
+        keys.size
       end
 
-      def to_s()
-        self.keys.to_s
+      def to_s
+        keys.to_s
       end
+
       def delete(version)
-        engine.sources.each do |name, metadata_source|
-          if (metadata_source.writable?)
-            metadata_source.delete_release(version)
-          end
+        engine.sources.each do |_name, metadata_source|
+          metadata_source.delete_release(version) if metadata_source.writable?
         end
       end
+
       def create(destination, source = 'master')
-        engine.sources.each do |name, metadata_source|
-          if (metadata_source.writable?)
+        engine.sources.each do |_name, metadata_source|
+          if metadata_source.writable?
             metadata_source.create_release(destination, source)
           end
         end
@@ -54,4 +54,3 @@ module Simp
     end
   end
 end
-

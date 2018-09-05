@@ -1,10 +1,12 @@
-require 'spec_helper'
+require_relative '../../spec_helper'
 require 'simp/metadata'
+
+# Need to fix test
 describe Simp::Metadata::Source do
-  it "should require a URL to be specified" do
-    expect {
-      source = Simp::Metadata::Source.new()
-    }.to raise_error(ArgumentError)
+  it 'should require a URL to be specified' do
+    expect do
+      source = Simp::Metadata::Source.new
+    end.to raise_error(ArgumentError)
   end
   # it "should instantiate when passed a valid metadata source" do
   #   expect {

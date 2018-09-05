@@ -2,7 +2,7 @@
 
 begin
   require 'simp/install/command'
-  command = Simp::Install::Command.new()
+  command = Simp::Install::Command.new
   command.run(ARGV)
 
 end
