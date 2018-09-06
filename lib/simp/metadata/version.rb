@@ -1,7 +1,9 @@
 module Simp
   module Metadata
     class Version
-      VERSION = '0.5.0'.freeze
+      def self.version
+      '0.5.2'.freeze
+      end
     end
   end
 end

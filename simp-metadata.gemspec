@@ -3,11 +3,12 @@ $LOAD_PATH.unshift File.expand_path('../lib', __FILE__)
 
 Gem::Specification.new do |s|
   s.name = 'simp-metadata'
-  s.date = '2017-05-16'
+  s.date = `git log -1 --format=%ai | awk '{print $1}'`
   s.version = `git describe --always`
   s.summary = 'SIMP Metadata Library'
   s.description = 'A library for accessing the SIMP metadata format for the simp project'
   s.authors = [
+    'Brandon Riden',
     'Dylan Cochran'
   ]
   s.executables      = `git ls-files -- exe/*`.split("\n").map { |f| File.basename(f) }

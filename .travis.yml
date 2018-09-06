@@ -17,8 +17,8 @@ script:
 matrix:
   fast_finish: true
 before_deploy:
-  - "export GEM_VERSION=`ruby -r ./lib/simp/metadata/version.rb -e 'puts Simp::Metadata::VERSION'`"
-  - '[[ $TRAVIS_TAG =~ ^${GEM_VERSION}$ ]]'
+  - "export GEM_VERSION=`ruby -r ./lib/simp/metadata/version.rb -e 'puts Simp::Metadata::Version.version'`"
+  - '[ "${TRAVIS_TAG}" == "${GEM_VERSION}" ]'
 deploy:
   - provider: rubygems
     gemspec: simp-metadata.gemspec
