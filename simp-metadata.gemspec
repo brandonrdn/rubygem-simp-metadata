@@ -8,6 +8,7 @@ Gem::Specification.new do |s|
   s.summary = 'SIMP Metadata Library'
   s.description = 'A library for accessing the SIMP metadata format for the simp project'
   s.authors = [
+    'Brandon Riden',
     'Dylan Cochran'
   ]
   s.executables      = `git ls-files -- exe/*`.split("\n").map { |f| File.basename(f) }
