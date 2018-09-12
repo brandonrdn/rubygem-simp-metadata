@@ -10,8 +10,8 @@ module Simp
 
       def initialize(cachepath = nil, metadatarepos = nil, edition = 'community', options = {})
         ENV['GIT_SSH'] = "#{File.dirname(__FILE__)}/git_ssh_wrapper.sh"
-        unless options['ssh_key'].nil?
-          ENV['SIMP_METADATA_SSHKEY'] = (options['ssh_key']).to_s
+        unless options[:ssh_key].nil?
+          ENV['SIMP_METADATA_SSHKEY'] = (options[:ssh_key]).to_s
         end
         @options = options
         @sources = {}

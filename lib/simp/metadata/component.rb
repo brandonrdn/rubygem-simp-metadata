@@ -202,7 +202,7 @@ module Simp
       def locations
         # XXX: ToDo Allow manifest.yaml to override locations
         # XXX: ToDo Use primary_source and mirrors here if locations is empty
-        Simp::Metadata::Locations.new({ 'locations' => get_from_component['locations'], 'primary_source' => get_from_component['primary_source'], 'mirrors' => get_from_component['mirrors'] }, self)
+        Simp::Metadata::Locations.new({:locations => get_from_component['locations'], :primary_source => get_from_component['primary_source'], :mirrors => get_from_component['mirrors'] }, self)
       end
 
       # XXX: ToDo Generate a filename, and output file type; ie, directory or file
@@ -238,7 +238,7 @@ module Simp
           if release.key?(name)
             release[name]['revision'] = value
           else
-            release[name] = { 'revision' => value }
+            release[name] = {:revision => value }
           end
         end
         release_source.dirty = true
@@ -254,7 +254,7 @@ module Simp
           if release.key?(name)
             release[name]['ref'] = value
           else
-            release[name] = { 'ref' => value }
+            release[name] = {:ref => value }
           end
         end
         release_source.dirty = true
@@ -270,7 +270,7 @@ module Simp
           if release.key?(name)
             release[name]['branch'] = value
           else
-            release[name] = { 'branch' => value }
+            release[name] = {:branch => value }
           end
         end
         release_source.dirty = true
@@ -286,7 +286,7 @@ module Simp
           if release.key?(name)
             release[name]['tag'] = value
           else
-            release[name] = { 'tag' => value }
+            release[name] = {:tag => value }
           end
         end
         release_source.dirty = true
@@ -346,14 +346,14 @@ module Simp
           if release.key?(name)
             release[name]['target'] = value
           else
-            release[name] = { 'target' => value }
+            release[name] = {:target => value }
           end
         end
         release_source.dirty = true
       end
 
       def platform
-        platform = engine.options['platform']
+        platform = engine.options[:platform]
         if platform.nil?
           'el7'
         else
@@ -421,8 +421,8 @@ module Simp
           end
           unless current_hash == comp_hash
             current_hash.each do |attr, value|
-              diff[attr] = { 'original' => (current_hash[attr]).to_s,
-                             'changed' => (comp_hash[attr]).to_s } if comp_hash[attr] != value
+              diff[attr] = {:original => (current_hash[attr]).to_s,
+                            :changed => (comp_hash[attr]).to_s } if comp_hash[attr] != value
             end
           end
           diff
@@ -430,7 +430,7 @@ module Simp
           v1 = self[attribute.to_s]
           v2 = component[attribute.to_s]
           unless v1 == v2
-            diff[attribute] = { 'original' => v1.to_s, 'changed' => v2.to_s }
+            diff[attribute] = {:original => v1.to_s, :changed => v2.to_s }
             diff
           end
         end

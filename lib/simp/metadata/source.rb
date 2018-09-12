@@ -117,7 +117,7 @@ module Simp
 
           Simp::Metadata.run("cd #{@load_path} && rm -rf v1")
           FileUtils.mkdir_p("#{@load_path}/v1")
-          File.open("#{@load_path}/v1/components.yaml", 'w') { |file| file.write({ 'components' => @components }.to_yaml) }
+          File.open("#{@load_path}/v1/components.yaml", 'w') { |file| file.write({:components => @components }.to_yaml) }
           @releases.each do |releasename, data|
             directory = case releasename
                         when /.*-[Aa][Ll][Pp][Hh][Aa].*/
@@ -140,7 +140,7 @@ module Simp
                           'releases'
                         end
             FileUtils.mkdir_p("#{@load_path}/v1/#{directory}")
-            File.open("#{@load_path}/v1/#{directory}/#{releasename}.yaml", 'w') { |file| file.write({ 'releases' => { releasename.to_s => data } }.to_yaml) }
+            File.open("#{@load_path}/v1/#{directory}/#{releasename}.yaml", 'w') { |file| file.write({:releases => {releasename.to_s => data } }.to_yaml) }
           end
           Simp::Metadata.run("cd #{@load_path} && git remote add upstream #{write_url}")
           Simp::Metadata.run("cd #{@load_path} && git remote set-url upstream #{write_url}")

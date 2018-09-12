@@ -15,10 +15,10 @@ module Simp
             setting = argv[1]
             value = argv[2]
 
-            if options['release'].nil?
+            if options[:release].nil?
               object = engine.components[component]
             else
-              object = engine.releases[options['release']].components[component]
+              object = engine.releases[options[:release]].components[component]
             end
 
             unless object.methods.include?(setting.to_sym)

@@ -14,11 +14,11 @@ module Simp
 
             case section
             when 'components'
-              puts engine.releases[options['release']].components.keys.join("\n")
+              puts engine.releases[options[:release]].components.keys.join("\n")
 
             when 'puppetfile'
               type = argv[1]
-              puts engine.releases[options['release']].puppetfile('type' => type)
+              puts engine.releases[options[:release]].puppetfile('type' => type)
 
             when 'diff'
               release1 = argv[1]
@@ -30,7 +30,7 @@ module Simp
               puts diff.to_yaml
             else
               puts 'components:'
-              engine.releases[options['release']].components.keys.each do |line|
+              engine.releases[options[:release]].components.keys.each do |line|
                 puts "    #{line}"
               end
             end

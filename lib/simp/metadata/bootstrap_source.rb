@@ -21,27 +21,27 @@ module Simp
         case edition
         when 'enterprise'
           @data = {
-            'components' => {
+              :components => {
               'enterprise-metadata' => {
-                'component-type' => 'simp-metadata',
-                'authoritative' => true,
-                'locations' => [
+                  'component-type' => 'simp-metadata',
+                  :authoritative => true,
+                  :locations => [
                   {
-                    'url' => 'simp-enterprise:///enterprise-metadata?version=master&filetype=tgz',
-                    'method' => 'file',
-                    'extract' => true,
-                    'primary' => true
+                      :url => 'simp-enterprise:///enterprise-metadata?version=master&filetype=tgz',
+                      :method => 'file',
+                      :extract => true,
+                      :primary => true
                   }
                 ]
               },
               'simp-metadata' => {
-                'component-type' => 'simp-metadata',
-                'authoritative' => true,
-                'locations' => [
+                  'component-type' => 'simp-metadata',
+                  :authoritative => true,
+                  :locations => [
                   {
-                    'url' => 'https://github.com/simp/simp-metadata',
-                    'method' => 'git',
-                    'primary' => true
+                      :url => 'https://github.com/simp/simp-metadata',
+                      :method => 'git',
+                      :primary => true
                   }
                 ]
               }
@@ -49,16 +49,16 @@ module Simp
           }
         when 'enterprise-only'
           @data = {
-            'components' => {
+              :components => {
               'enterprise-metadata' => {
-                'component-type' => 'simp-metadata',
-                'authoritative' => true,
-                'locations' => [
+                  'component-type' => 'simp-metadata',
+                  :authoritative => true,
+                  :locations => [
                   {
-                    'url' => 'simp-enterprise:///enterprise-metadata?version=master&filetype=tgz',
-                    'method' => 'file',
-                    'extract' => true,
-                    'primary' => true
+                      :url => 'simp-enterprise:///enterprise-metadata?version=master&filetype=tgz',
+                      :method => 'file',
+                      :extract => true,
+                      :primary => true
                   }
                 ]
               }
@@ -66,15 +66,15 @@ module Simp
           }
         else
           @data = {
-            'components' => {
+              :components => {
               'simp-metadata' => {
-                'component-type' => 'simp-metadata',
-                'authoritative' => true,
-                'locations' => [
+                  'component-type' => 'simp-metadata',
+                  :authoritative => true,
+                  :locations => [
                   {
-                    'url' => 'https://github.com/simp/simp-metadata',
-                    'method' => 'git',
-                    'primary' => true
+                      :url => 'https://github.com/simp/simp-metadata',
+                      :method => 'git',
+                      :primary => true
                   }
                 ]
               }
@@ -89,22 +89,22 @@ module Simp
         when 'enterprise'
           {
             'enterprise-metadata' => {
-              'version' => 'master'
+                :version => 'master'
             },
             'simp-metadata' => {
-              'branch' => 'master'
+                :branch => 'master'
             }
           }
         when 'enterprise-only'
           {
             'enterprise-metadata' => {
-              'version' => 'master'
+                :version => 'master'
             }
           }
         else
           {
             'simp-metadata' => {
-              'branch' => 'master'
+                :branch => 'master'
             }
           }
         end

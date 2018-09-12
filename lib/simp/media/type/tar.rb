@@ -7,7 +7,7 @@ module Simp
           @cleanup = []
 
           @origtempdir = Dir.mktmpdir('cachedir')
-          @tempdir = @origtempdir + '/' + File.basename(options['output'], '.*')
+          @tempdir = @origtempdir + '/' + File.basename(options[:output], '.*')
           @cleanup << @origtempdir
           super(options, engine)
         end
@@ -45,12 +45,12 @@ module Simp
 
         def finalize(_manifest)
           if @options.key?('local_directory')
-            if Dir.exist?(@options['local_directory'])
-              FileUtils.cp_r(Dir.glob(@options['local_directory'] + '/*'), @tempdir)
+            if Dir.exist?(@options[:local_directory])
+              FileUtils.cp_r(Dir.glob(@options[:local_directory] + '/*'), @tempdir)
             end
           end
           Dir.chdir(@origtempdir) do
-            `tar -cf - * | gzip -9nc >#{@options['output']}`
+            `tar -cf - * | gzip -9nc >#{@options[:output]}`
           end
         end
 

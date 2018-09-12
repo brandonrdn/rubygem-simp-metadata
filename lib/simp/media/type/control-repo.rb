@@ -6,16 +6,16 @@ module Simp
         def initialize(options, engine)
           super(options, engine)
           @cleanup = []
-          if options['output'].nil?
+          if options[:output].nil?
             raise 'output must be specified for control-repo output'
           end
           @origtempdir = Dir.mktmpdir('cachedir')
           @repopath = "#{@origtempdir}/control-repo"
           FileUtils.mkdir_p(@repopath)
           @cleanup << @origtempdir
-          exit_code = run("git clone #{options['output']} #{@repopath}")
+          exit_code = run("git clone #{options[:output]} #{@repopath}")
           unless exit_code.success?
-            uri = URI(options['output'])
+            uri = URI(options[:output])
             if uri.scheme == 'file'
               FileUtils.mkdir_p(uri.path)
               Dir.chdir(uri.path) do |path|
@@ -25,26 +25,26 @@ module Simp
                   run('git init')
                 end
 
-                run("git clone #{options['output']} #{@repopath}")
+                run("git clone #{options[:output]} #{@repopath}")
               end
             else
               raise 'output is not a valid control-repo'
             end
           end
           Dir.chdir(@repopath) do
-            exit_code = run("git checkout #{options['branch']}")
+            exit_code = run("git checkout #{options[:branch]}")
             unless exit_code.success?
-              exit_code = run("git checkout -b #{options['branch']}")
+              exit_code = run("git checkout -b #{options[:branch]}")
               unless exit_code.success?
-                raise "error, unable to checkout #{options['branch']} in git repo #{uri}"
+                raise "error, unable to checkout #{options[:branch]} in git repo #{uri}"
               end
             end
-            @branch = options['branch']
-            unless options['destination_branch'].nil?
-              @branch = options['destination_branch']
-              exit_code = run("git checkout -b #{options['destination_branch']}")
+            @branch = options[:branch]
+            unless options[:destination_branch].nil?
+              @branch = options[:destination_branch]
+              exit_code = run("git checkout -b #{options[:destination_branch]}")
               unless exit_code.success?
-                raise "error, unable to create branch #{options['destination_branch']} in git repo #{uri}"
+                raise "error, unable to create branch #{options[:destination_branch]} in git repo #{uri}"
               end
             end
             run('rm -rf SIMP/modules')
@@ -53,7 +53,7 @@ module Simp
         end
 
         def add_component(component, fetch_return_value)
-          if options['embed']
+          if options[:embed]
             # XXX ToDo: Copy components to control-repo if embed == true
             case component.component_type
             when 'documentation'
@@ -101,9 +101,9 @@ module Simp
           hierayaml = "#{@repopath}/hiera.yaml"
           # XXX ToDo: Munge hiera.yaml
           munge_hierayaml(hierayaml)
-          munge_environmentconf(environmentconf) if options['embed']
+          munge_environmentconf(environmentconf) if options[:embed]
           run("cd #{@repopath} && git add -A")
-          run("cd #{@repopath} && git commit -m \"simp-install: upgrade to #{options['version']}\"")
+          run("cd #{@repopath} && git commit -m \"simp-install: upgrade to #{options[:version]}\"")
           run("cd #{@repopath} && git push origin #{@branch}")
         end
 
@@ -151,7 +151,7 @@ module Simp
                 end
               end
               unless found
-                hash = { 'name' => 'SIMP Compliance Engine', 'lookup_key' => 'compliance_markup::enforcement' }
+                hash = {:name => 'SIMP Compliance Engine', :lookup_key => 'compliance_markup::enforcement' }
                 data['hierarchy'] << hash
               end
             when nil

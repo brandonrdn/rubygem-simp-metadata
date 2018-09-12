@@ -8,18 +8,18 @@ module Simp
 
           case subcommand
           when '--help', '-h'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component [ view | diff | download | build | update | create ]'
             end
 
           when 'create'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component create <component_name> name=<value>'
             end
             engine, root = get_engine(engine, options)
             component = argv[1]
             argv.shift
-            data = {'locations' => [{'primary' => true}]}
+            data = {:locations => [{:primary => true}]}
             argv.each do |argument|
               splitted = argument.split('=')
               name = splitted[0]
@@ -40,7 +40,7 @@ module Simp
             engine.components.create(component, data)
 
           when 'update'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component update <component> <setting> <value>'
             end
             engine, root = get_engine(engine, options)
@@ -60,17 +60,17 @@ module Simp
             end
 
           when 'view'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component view <component> [attribute]'
             end
             engine, root = get_engine(engine, options)
             component = argv[1]
             attribute = argv[2]
             if engine.components.key?(component)
-              if options['release'].nil?
+              if options[:release].nil?
                 comp = engine.components[component]
               else
-                comp = engine.releases[options['release']].components[component]
+                comp = engine.releases[options[:release]].components[component]
               end
               view = comp.view(attribute)
               puts view.to_yaml
@@ -80,7 +80,7 @@ module Simp
             end
 
           when 'diff'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component diff <release1> <release2> <component> [attribute]'
             end
             engine, root = get_engine(engine, options)
@@ -94,25 +94,25 @@ module Simp
             puts diff.to_yaml
 
           when 'download'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component download [-v <version>] [-d <destination>] [-s <source>] <component>'
-              options['source'] = []
-              opts.on('-s', '--source [path/url]', 'URL or path to grab RPMs from (can be passed more than once)') do |opt|
-                options['source'] << opt
+              options[:source] = []
+              opts.on('-s', '--source [path/url]', 'URL or path to grab RPMs from (can be passed more than once)') do |source|
+                options[:source] << source
               end
-              opts.on('-d', '--destination [path]', 'folder to build RPMs in') do |opt|
-                options['destination'] = opt
+              opts.on('-d', '--destination [path]', 'folder to build RPMs in') do |destination|
+                options[:destination] = destination
               end
             end
             engine, root = get_engine(engine, options)
             component = argv[1]
-            destination = options['destination']
-            source = options['source']
+            destination = options[:destination]
+            source = options[:source]
             if engine.components.key?(component)
-              if options['release'].nil?
+              if options[:release].nil?
                 comp = engine.components[component]
               else
-                comp = engine.releases[options['release']].components[component]
+                comp = engine.releases[options[:release]].components[component]
               end
               comp.download(destination, source)
             else
@@ -121,20 +121,20 @@ module Simp
             end
 
           when 'build'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component build [-v <version>] [-d <destination>] [-s <source>] <component>'
-              opts.on('-d', '--destination [path]', 'folder to build RPMs in') do |opt|
-                options['destination'] = opt
+              opts.on('-d', '--destination [path]', 'folder to build RPMs in') do |destination|
+                options[:destination] = destination
               end
             end
             engine, root = get_engine(engine, options)
             component = argv[1]
-            destination = options['destination']
+            destination = options[:destination]
             if engine.components.key?(component)
-              if options['release'].nil?
+              if options[:release].nil?
                 comp = engine.components[component]
               else
-                comp = engine.releases[options['release']].components[component]
+                comp = engine.releases[options[:release]].components[component]
               end
               comp.build(destination)
             else

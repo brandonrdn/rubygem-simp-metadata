@@ -11,7 +11,7 @@ module Simp
           engine, root = get_engine(engine, options)
           begin
             engine.releases.delete(argv[0])
-            if root == true
+            if root
               engine.save((['simp-metadata', 'delete'] + argv).join(' '))
             end
           rescue RuntimeError => e

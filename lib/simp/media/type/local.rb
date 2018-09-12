@@ -6,7 +6,7 @@ module Simp
         attr_writer :input_directory
 
         def input_directory
-          @options['input']
+          @options[:input]
         end
 
         def fetch_component(component, options)
@@ -14,7 +14,7 @@ module Simp
 
           case component.class.to_s
           when 'String'
-            retval['path'] = "#{options['input']}/simp/metadata/#{component.name}"
+            retval['path'] = "#{options[:input]}/simp/metadata/#{component.name}"
           when 'Simp::Metadata::Component'
             # XXX ToDo: Add manifest.yaml support so we don't need this logic at all
             subdirectory = case component.component_type
@@ -25,7 +25,7 @@ module Simp
                            else
                              'simp/assets'
                            end
-            retval['path'] = "#{options['input']}/#{subdirectory}/#{component.name}"
+            retval['path'] = "#{options[:input]}/#{subdirectory}/#{component.name}"
           end
           retval
         end

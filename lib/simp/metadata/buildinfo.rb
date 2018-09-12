@@ -30,8 +30,8 @@ module Simp
 
       def method_defaults
         {
-          'rpm' => {
-            'build_method' => 'simp-core'
+            :rpm => {
+                :build_method => 'simp-core'
           }
         }
       end

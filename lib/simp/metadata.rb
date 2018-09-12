@@ -22,10 +22,10 @@ require 'simp/metadata/version'
 module Simp
   module Metadata
     def self.directory_name(component, options)
-      if options['target'].nil?
+      if options[:target].nil?
         raise "Must specify 'target'"
       else
-        basedir = options['target']
+        basedir = options[:target]
       end
 
       case component.class.to_s
@@ -47,13 +47,13 @@ module Simp
         # XXX: ToDo We can bootstrap this with a hard coded source in the simp engine
         bootstrapped_components = {
           'simp-metadata' => {
-            'url' => 'https://github.com/simp/simp-metadata',
-            'method' => 'git'
+              :url => 'https://github.com/simp/simp-metadata',
+              :method => 'git'
           },
           'enterprise-metadata' => {
-            'url' => 'simp-enterprise:///enterprise-metadata?version=master&filetype=tgz',
-            'method' => 'file',
-            'extract' => true
+              :url => 'simp-enterprise:///enterprise-metadata?version=master&filetype=tgz',
+              :method => 'file',
+              :extract => true
           }
         }
         # All this should be removed and be based on component.file_type
@@ -68,9 +68,9 @@ module Simp
         end
       when 'Simp::Metadata::Component'
         retval['path'] = directory_name
-        if options['url']
+        if options[:url]
           location = component.primary
-          location.url = options['url']
+          location.url = options[:url]
           urlspec = location
           location.method = 'git'
         else
@@ -273,7 +273,7 @@ module Simp
         http.use_ssl = true
         case uri.scheme
         when 'simp-enterprise'
-          filename, data = get_license_data(options['license'])
+          filename, data = get_license_data(options[:license])
           http.ca_file = filename unless filename.nil?
           unless data.nil?
             http.cert = OpenSSL::X509::Certificate.new(data)

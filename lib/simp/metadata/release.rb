@@ -29,7 +29,7 @@ module Simp
 
       def puppetfile(options = {})
         contents = []
-        if options['type'] == 'simp-core'
+        if options[:type] == 'simp-core'
           contents << "moduledir 'src'"
           contents << ''
           contents << puppetfile_component(components['simp-doc'], options)
@@ -92,8 +92,8 @@ module Simp
             next unless compare_hash.key?(comp)
             next unless compare_hash[comp][key] != value
             diff_hash[key] = {
-              'original' => value.to_s,
-              'changed' => (compare_hash[comp][key]).to_s
+                :original => value.to_s,
+                :changed => (compare_hash[comp][key]).to_s
             }
           end
           diff[comp] = diff_hash unless diff_hash.empty?

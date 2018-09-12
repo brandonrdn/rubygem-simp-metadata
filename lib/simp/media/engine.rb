@@ -33,30 +33,30 @@ module Simp
 
       def initialize(options = {})
         {
-          'input_type' => 'internet',
-          'input' => nil,
-          'output_type' => 'control_repo',
-          'output' => 'file:///usr/share/simp/control-repo',
-          'url' => nil,
-          'embed' => true,
-          'license' => '/etc/simp/license.key',
-          'sign' => false,
-          'signing_key' => nil,
-          'metadata' => nil,
-          'branch' => 'production',
-          'destination_branch' => nil,
-          'edition' => 'community',
-          'channel' => 'stable',
-          'flavor' => 'default'
+            :input_type => 'internet',
+            :input => nil,
+            :output_type => 'control_repo',
+            :output => 'file:///usr/share/simp/control-repo',
+            :url => nil,
+            :embed => true,
+            :license => '/etc/simp/license.key',
+            :sign => false,
+            :signing_key => nil,
+            :metadata => nil,
+            :branch => 'production',
+            :destination_branch => nil,
+            :edition => 'community',
+            :channel => 'stable',
+            :flavor => 'default'
         }.each do |key, default_value|
           options[key] = default_value unless options.key?(key)
         end
         @cleanup = []
         @options = options
-        raise 'input_type must be specified' if options['input_type'].nil?
-        raise 'output_type must be specified' if options['output_type'].nil?
-        @input = Module.const_get("Simp::Media::Type::#{@options['input_type'].capitalize}").new(options, self)
-        @output = Module.const_get("Simp::Media::Type::#{@options['output_type'].capitalize}").new(options, self)
+        raise 'input_type must be specified' if options[:input_type].nil?
+        raise 'output_type must be specified' if options[:output_type].nil?
+        @input = Module.const_get("Simp::Media::Type::#{@options[:input_type].capitalize}").new(options, self)
+        @output = Module.const_get("Simp::Media::Type::#{@options[:output_type].capitalize}").new(options, self)
       end
 
       def run
@@ -69,10 +69,10 @@ module Simp
         end
 
         # XXX ToDo: only set this if input is specified
-        @input.input_directory = @options['input']
+        @input.input_directory = @options[:input]
 
-        metadata = Simp::Metadata::Engine.new(nil, nil, @options['edition'])
-        version = @options['version']
+        metadata = Simp::Metadata::Engine.new(nil, nil, @options[:edition])
+        version = @options[:version]
         metadata.releases[version].components.each do |component|
           info("Adding #{component.name}")
           retval = @input.fetch_component(component, {})
