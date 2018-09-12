@@ -4,7 +4,7 @@ module Simp
     module Commands
       class Release < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
-          options = defaults(argv) do |opts|
+          options = defaults(argv) do |opts,options|
             opts.banner = 'Usage: simp-metadata release <release_name> [components]'
             opts.banner = '       simp-metadata release diff <release1> <release2>'
           end

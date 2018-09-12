@@ -522,10 +522,10 @@ module Simp
         rpm_name = self.rpm_name
         return if File.exist?("#{destination}/#{rpm_name}")
         el_version = platform.split('el')[1]
-        if src.nil?
-          sources = ["https://download.simp-project.com/SIMP/yum/simp6/el/#{el_version}/x86_64", "https://download.simp-project.com/SIMP/yum/unstable/el/#{el_version}/x86_64"]
+        if src.any?
+          sources = src
         else
-          sources = [source.to_s]
+          sources = ["https://download.simp-project.com/SIMP/yum/simp6/el/#{el_version}/x86_64", "https://download.simp-project.com/SIMP/yum/unstable/el/#{el_version}/x86_64"]
         end
         sources.each do |source|
           if source =~ /^https?:/
@@ -537,7 +537,7 @@ module Simp
           puts "Copied #{rpm_name} from #{source}" if File.exist?("#{destination}/#{rpm_name}")
           return if File.exist?("#{destination}/#{rpm_name}")
         end
-        puts "Unable to fine #{rpm_name} from #{sources}"
+        puts "Unable to find #{rpm_name} from #{sources}"
       end
     end
   end

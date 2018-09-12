@@ -8,18 +8,18 @@ module Simp
 
           case subcommand
           when '--help', '-h'
-            options = defaults(argv) do |opts|
+            options = defaults(argv) do |opts,options|
               opts.banner = 'Usage: simp-metadata component [ view | diff | download | build | update | create ]'
             end
 
           when 'create'
-            options = defaults(argv) do |opts|
+            options = defaults(argv) do |opts,options|
               opts.banner = 'Usage: simp-metadata component create <component_name> name=<value>'
             end
             engine, root = get_engine(engine, options)
             component = argv[1]
             argv.shift
-            data = { 'locations' => [{ 'primary' => true }] }
+            data = {'locations' => [{'primary' => true}]}
             argv.each do |argument|
               splitted = argument.split('=')
               name = splitted[0]
@@ -40,7 +40,7 @@ module Simp
             engine.components.create(component, data)
 
           when 'update'
-            options = defaults(argv) do |opts|
+            options = defaults(argv) do |opts,options|
               opts.banner = 'Usage: simp-metadata component update <component> <setting> <value>'
             end
             engine, root = get_engine(engine, options)
@@ -60,7 +60,7 @@ module Simp
             end
 
           when 'view'
-            options = defaults(argv) do |opts|
+            options = defaults(argv) do |opts,options|
               opts.banner = 'Usage: simp-metadata component view <component> [attribute]'
             end
             engine, root = get_engine(engine, options)
@@ -80,7 +80,7 @@ module Simp
             end
 
           when 'diff'
-            options = defaults(argv) do |opts|
+            options = defaults(argv) do |opts,options|
               opts.banner = 'Usage: simp-metadata component diff <release1> <release2> <component> [attribute]'
             end
             engine, root = get_engine(engine, options)
@@ -94,13 +94,20 @@ module Simp
             puts diff.to_yaml
 
           when 'download'
-            options = defaults(argv) do |opts|
-              opts.banner = 'Usage: simp-metadata component download -v <version> <component> [destination] [source]'
+            options = defaults(argv) do |opts,options|
+              opts.banner = 'Usage: simp-metadata component download [-v <version>] [-d <destination>] [-s <source>] <component>'
+              options['source'] = []
+              opts.on('-s', '--source [path/url]', 'URL or path to grab RPMs from (can be passed more than once)') do |opt|
+                options['source'] << opt
+              end
+              opts.on('-d', '--destination [path]', 'folder to build RPMs in') do |opt|
+                options['destination'] = opt
+              end
             end
             engine, root = get_engine(engine, options)
             component = argv[1]
-            destination = argv[2]
-            source = argv[3]
+            destination = options['destination']
+            source = options['source']
             if engine.components.key?(component)
               if options['release'].nil?
                 comp = engine.components[component]
@@ -114,12 +121,15 @@ module Simp
             end
 
           when 'build'
-            options = defaults(argv) do |opts|
-              opts.banner = 'Usage: simp-metadata component build <component> [destination]'
+            options = defaults(argv) do |opts,options|
+              opts.banner = 'Usage: simp-metadata component build [-v <version>] [-d <destination>] [-s <source>] <component>'
+              opts.on('-d', '--destination [path]', 'folder to build RPMs in') do |opt|
+                options['destination'] = opt
+              end
             end
             engine, root = get_engine(engine, options)
             component = argv[1]
-            destination = argv[2]
+            destination = options['destination']
             if engine.components.key?(component)
               if options['release'].nil?
                 comp = engine.components[component]

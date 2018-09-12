@@ -4,7 +4,7 @@ module Simp
     module Commands
       class Set_write_url < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
-          options = defaults(argv) do |opts|
+          options = defaults(argv) do |opts,options|
             opts.banner = 'Usage: simp-metadata set-write-url <repo_name> <url>'
           end
 

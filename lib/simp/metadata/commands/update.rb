@@ -4,7 +4,7 @@ module Simp
     module Commands
       class Update < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
-          options = defaults(argv) do |opts|
+          options = defaults(argv) do |opts,options|
             opts.banner = 'Usage: simp-metadata update <component> <setting> <value>'
           end
 

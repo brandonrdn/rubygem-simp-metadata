@@ -4,7 +4,7 @@ module Simp
     module Commands
       class Clone < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
-          options = defaults(argv) do |opts|
+          options = defaults(argv) do |opts,options|
             opts.banner = 'Usage: simp-metadata clone <source_release> <target_release>'
           end
 

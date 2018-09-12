@@ -6,7 +6,7 @@ module Simp
     module Commands
       class Search < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
-          options = defaults(argv) do |opts|
+          options = defaults(argv) do |opts,options|
             opts.banner = "Usage: simp-metadata search <attribute>=<value>\n(supports multiple attributes as well as encoded URLs)"
           end
 

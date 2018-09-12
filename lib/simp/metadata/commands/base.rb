@@ -57,7 +57,7 @@ module Simp
             opts.on('-p', '--platform [platform]', 'el_version to use', 'valid platforms:', ' - el6', ' - el7') do |opt|
               options['platform'] = opt
             end
-            yield(opts) if block_given?
+            yield(opts,options) if block_given?
           end
           option_parser.parse!(argv)
           options
