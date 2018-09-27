@@ -70,6 +70,7 @@ module Simp
       def fetch_data(item)
         component = get_from_component
         release = get_from_release
+        iso = get_from_iso
         if release.key?(item)
           release[item]
         else
@@ -121,7 +122,7 @@ module Simp
       end
 
       def keys
-        %w(component_type authoritative asset_name extension format module_name type url method extract branch tag ref version release_source component_source target revision)
+        %w(platforms component_type authoritative asset_name extension format module_name type url method extract branch tag ref version release_source component_source target revision)
       end
 
       def [](index)
@@ -132,6 +133,10 @@ module Simp
         keys.each do |key|
           yield key, self[key]
         end
+      end
+
+      def platforms
+        get_from_release['platforms']
       end
 
       def real_extension
@@ -202,7 +207,7 @@ module Simp
       def locations
         # XXX: ToDo Allow manifest.yaml to override locations
         # XXX: ToDo Use primary_source and mirrors here if locations is empty
-        Simp::Metadata::Locations.new({ 'locations' => get_from_component['locations'], 'primary_source' => get_from_component['primary_source'], 'mirrors' => get_from_component['mirrors'] }, self)
+        Simp::Metadata::Locations.new({'locations' => get_from_component['locations'], 'primary_source' => get_from_component['primary_source'], 'mirrors' => get_from_component['mirrors']}, self)
       end
 
       # XXX: ToDo Generate a filename, and output file type; ie, directory or file
@@ -238,7 +243,7 @@ module Simp
           if release.key?(name)
             release[name]['revision'] = value
           else
-            release[name] = { 'revision' => value }
+            release[name] = {'revision' => value}
           end
         end
         release_source.dirty = true
@@ -254,7 +259,7 @@ module Simp
           if release.key?(name)
             release[name]['ref'] = value
           else
-            release[name] = { 'ref' => value }
+            release[name] = {'ref' => value}
           end
         end
         release_source.dirty = true
@@ -270,7 +275,7 @@ module Simp
           if release.key?(name)
             release[name]['branch'] = value
           else
-            release[name] = { 'branch' => value }
+            release[name] = {'branch' => value}
           end
         end
         release_source.dirty = true
@@ -286,7 +291,7 @@ module Simp
           if release.key?(name)
             release[name]['tag'] = value
           else
-            release[name] = { 'tag' => value }
+            release[name] = {'tag' => value}
           end
         end
         release_source.dirty = true
@@ -362,18 +367,18 @@ module Simp
           if release.key?(name)
             release[name]['target'] = value
           else
-            release[name] = { 'target' => value }
+            release[name] = {'target' => value}
           end
         end
         release_source.dirty = true
       end
 
-      def platform
-        platform = engine.options['platform']
-        if platform.nil?
+      def os_version
+        os_version = engine.options['os_version']
+        if os_version.nil?
           'el7'
         else
-          platform
+          os_version
         end
       end
 
@@ -381,7 +386,11 @@ module Simp
         if component_type == 'puppet-module'
           "#{rpm_basename}-#{rpm_version}.#{target}.rpm"
         else
-          "#{rpm_basename}-#{rpm_version}.#{platform}.#{target}.rpm"
+          if compiled?
+            "#{rpm_basename}-#{rpm_version}.#{os_version}.#{target}.rpm"
+          else
+            "#{rpm_basename}-#{rpm_version}.#{target}.rpm"
+          end
         end
       end
 
@@ -437,8 +446,8 @@ module Simp
           end
           unless current_hash == comp_hash
             current_hash.each do |attr, value|
-              diff[attr] = { 'original' => (current_hash[attr]).to_s,
-                             'changed' => (comp_hash[attr]).to_s } if comp_hash[attr] != value
+              diff[attr] = {'original' => (current_hash[attr]).to_s,
+                            'changed' => (comp_hash[attr]).to_s} if comp_hash[attr] != value
             end
           end
           diff
@@ -446,7 +455,7 @@ module Simp
           v1 = self[attribute.to_s]
           v2 = component[attribute.to_s]
           unless v1 == v2
-            diff[attribute] = { 'original' => v1.to_s, 'changed' => v2.to_s }
+            diff[attribute] = {'original' => v1.to_s, 'changed' => v2.to_s}
             diff
           end
         end
@@ -533,28 +542,36 @@ module Simp
         FileUtils.move "#{currentdir}/#{rpm_name}", destination
       end
 
-      def download(destination, src)
+      def download(destination, src, file = "#{rpm_name}")
         destination = Dir.pwd if destination.nil?
-        rpm_name = self.rpm_name
-        return if File.exist?("#{destination}/#{rpm_name}")
-        el_version = platform.split('el')[1]
-        if src.any?
-          sources = src
+        return if File.exist?("#{destination}/#{file}")
+        el_version = os_version.split('el')[1]
+        if src
+          sources = [src]
         else
-          sources = ["https://download.simp-project.com/SIMP/yum/simp6/el/#{el_version}/x86_64", "https://download.simp-project.com/SIMP/yum/unstable/el/#{el_version}/x86_64"]
+          if component_source.to_s == 'enterprise-metadata'
+            sources = ["https://enterprise-download.simp-project.com:443/products/simp-enterprise/#{module_name}", "https://enterprise-download.simp-project.com:443/products/simp-enterprise-dev/#{module_name}"]
+          else
+            sources = ["https://download.simp-project.com/SIMP/yum/simp6/el/#{el_version}/x86_64", "https://download.simp-project.com/SIMP/yum/unstable/el/#{el_version}/x86_64"]
+          end
         end
         sources.each do |source|
           if source =~ /^https?:/
-            file_check = `curl -sLI #{source}/#{rpm_name} | head -n 1 | awk '{print $2}'`.chomp
-            `wget -q #{source}/#{rpm_name}` if file_check == '200'
-          elsif File.exist?("#{source}/#{rpm_name}")
-            FileUtils.cp "#{source}/#{rpm_name}", destination
+            file_check = `curl -sLI #{source}/#{file} | head -n 1 | awk '{print $2}'`.chomp
+              if file_check == '200'
+                `wget -q -P #{destination} #{source}/#{file}`
+                #File.open("#{destination}/#{file}", "w") do |opened|
+                #HTTParty.get("#{source}/#{file}", stream_body: true) do |fragment|
+                #  opened.write(fragment)
+                #end
+              #end
+            end
+              elsif File.exist?("#{source}/#{file}")
+              FileUtils.cp "#{source}/#{file}", destination
+            end
+            return if File.exist?("#{destination}/#{file}")
           end
-          puts "Copied #{rpm_name} from #{source}" if File.exist?("#{destination}/#{rpm_name}")
-          return if File.exist?("#{destination}/#{rpm_name}")
         end
-        puts "Unable to find #{rpm_name} from #{sources}"
       end
     end
   end
-end

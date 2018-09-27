@@ -18,6 +18,9 @@ require 'simp/metadata/buildinfo'
 require 'simp/metadata/locations'
 require 'simp/metadata/location'
 require 'simp/metadata/version'
+require 'simp/metadata/build'
+require 'simp/metadata/isos'
+require 'simp/metadata/iso'
 
 module Simp
   module Metadata

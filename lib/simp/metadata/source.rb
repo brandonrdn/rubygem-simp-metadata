@@ -15,6 +15,7 @@ module Simp
       attr_accessor :name
       attr_accessor :edition
       attr_accessor :engine
+      attr_accessor :isos
 
       def initialize(args)
         unless args.key?(:engine)
@@ -44,6 +45,7 @@ module Simp
         cachepath = args[:cachepath]
         @components = {}
         @releases = {}
+        @isos = {}
         @data = {}
         @cleanup = []
 
@@ -167,6 +169,7 @@ module Simp
         end
         @releases = @data['releases'] unless @data['releases'].nil?
         @components = @data['components'] unless @data['components'].nil?
+        @isos = @data['isos'] unless @data['isos'].nil?
       end
 
       def deep_merge(target_hash, source_hash)

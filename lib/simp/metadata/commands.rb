@@ -12,6 +12,7 @@ require 'simp/metadata/commands/update'
 require 'simp/metadata/commands/component'
 require 'simp/metadata/commands/pry'
 require 'simp/metadata/commands/search'
+require 'simp/metadata/commands/build'
 
 module Simp
   module Metadata
