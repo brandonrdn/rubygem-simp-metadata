@@ -8,12 +8,12 @@ module Simp
 
           case subcommand
           when '--help', '-h'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component [ view | diff | download | build | update | create ]'
             end
 
           when 'create'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component create <component_name> name=<value>'
             end
             engine, root = get_engine(engine, options)
@@ -40,7 +40,7 @@ module Simp
             engine.components.create(component, data)
 
           when 'update'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component update <component> <setting> <value>'
             end
             engine, root = get_engine(engine, options)
@@ -72,7 +72,7 @@ module Simp
             attribute = argv[2]
             value = argv[3]
 
-            releases = engine.releases.keys - ['test-stub','test-diff','test-nightly-2018-02-08','5.1.0-2','5.1.0-1','5.1.0-0','4.2.0-0','5.1.0-RC1','5.1.0-Beta','4.2.0-RC1','4.2.0-Beta2']
+            releases = engine.releases.keys - ['test-stub','test-diff']
             matches = releases.select{ |release| puts "true" if engine.releases[release].components[component].version?; engine.releases[release].components[component][attribute] == value}
             if options['show_all']
               output = matches
@@ -84,7 +84,7 @@ module Simp
             puts output
 
           when 'view'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component view <component> [attribute]'
             end
             engine, root = get_engine(engine, options)
@@ -104,7 +104,7 @@ module Simp
             end
 
           when 'diff'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component diff <release1> <release2> <component> [attribute]'
             end
             engine, root = get_engine(engine, options)
@@ -118,7 +118,7 @@ module Simp
             puts diff.to_yaml
 
           when 'download'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component download [-v <version>] [-d <destination>] [-s <source>] <component>'
               options['source'] = []
               opts.on('-s', '--source [path/url]', 'URL or path to grab RPMs from (can be passed more than once)') do |opt|
@@ -145,7 +145,7 @@ module Simp
             end
 
           when 'build'
-            options = defaults(argv) do |opts,options|
+            options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component build [-v <version>] [-d <destination>] [-s <source>] <component>'
               opts.on('-d', '--destination [path]', 'folder to build RPMs in') do |opt|
                 options['destination'] = opt
@@ -167,7 +167,7 @@ module Simp
             end
 
           else
-            abort(Simp::Metadata.critical("Unrecognized subcommand '#{subcommand}}'.")[0])
+            abort(Simp::Metadata.critical("Unrecognized subcommand '#{subcommand}'.")[0])
           end
 
           engine.save((['simp-metadata', 'component'] + argv).join(' ')) if root

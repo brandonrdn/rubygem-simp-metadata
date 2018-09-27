@@ -39,6 +39,10 @@ module Simp
         Simp::Metadata::Components.new(self)
       end
 
+      def isos
+        Simp::Metadata::Isos.new(self)
+      end
+
       def releases
         Simp::Metadata::Releases.new(self)
       end

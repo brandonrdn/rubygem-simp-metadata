@@ -54,8 +54,8 @@ module Simp
             opts.on('-e', '--edition [edition]', 'simp edition') do |opt|
               options['edition'] = opt
             end
-            opts.on('-p', '--platform [platform]', 'el_version to use', 'valid platforms:', ' - el6', ' - el7') do |opt|
-              options['platform'] = opt
+            opts.on('-p', '--os_version [os_version]', 'el_version to use', 'valid os_versions:', ' - el6', ' - el7') do |opt|
+              options['os_version'] = opt
             end
             yield(opts,options) if block_given?
           end

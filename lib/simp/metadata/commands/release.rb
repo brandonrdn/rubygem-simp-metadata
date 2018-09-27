@@ -28,6 +28,7 @@ module Simp
               release2 = engine.releases[release2]
               diff = release1.diff(release2, attribute)
               puts diff.to_yaml
+              
             else
               puts 'components:'
               engine.releases[options['release']].components.keys.each do |line|
