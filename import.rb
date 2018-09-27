@@ -3,6 +3,7 @@ require 'simp/metadata'
 require 'yaml'
 $UPSTREAMREPO = 'https://github.com/simp/simp-core.git'
 $DATAREPO = 'git@github.com:simp/simp-metadata.git'
+@metadata_version = 'v2'
 
 begin
   Dir.mkdir('scratch')
@@ -108,9 +109,9 @@ Dir.chdir('scratch/upstream') do
           gitinfo = parse_git(value[:git])
           ret['primary_source'] = gitinfo.dup.delete_if { |key, _value| key == 'type' }
           object = {
-            'ref' => value[:ref],
-            'type' => gitinfo['type'],
-            'path' => value['destination']
+              'ref' => value[:ref],
+              'type' => gitinfo['type'],
+              'path' => value['destination']
           }
           if component_by_url.key?(ret['primary_source'])
             release[component_by_url[ret['primary_source']]] = object
@@ -140,12 +141,13 @@ Dir.chdir('scratch/upstream') do
     end
   end
 end
+require 'pry'; require 'pry-byebug'; binding.pry
 comp = { 'components' => components }
-File.open('scratch/data/simp-metadata/v1/components.yaml', 'w') { |f| f.write comp.to_yaml }
+File.open("scratch/data/simp-metadata/#{@metadata_version}/components.yaml", 'w') { |f| f.write comp.to_yaml }
 
 data['releases'].each do |key, value|
   release = { 'releases' => { key => value } }
-  File.open("scratch/data/simp-metadata/v1/releases/#{key}.yaml", 'w') { |f| f.write release.to_yaml }
+  File.open("scratch/data/simp-metadata/#{@metadata_version}/releases/#{key}.yaml", 'w') { |f| f.write release.to_yaml }
 end
 Dir.chdir('scratch/data') do
   `git add -A`

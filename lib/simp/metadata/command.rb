@@ -34,54 +34,58 @@ module Simp
 
         # XXX: ToDo: make this dynamic...
         subcommands = [
-          [
-            'clone',
-            'Clones one simp release into another'
-          ],
-          [
-            'component',
-            'create, view, or update a component'
-          ],
-          [
-            'delete',
-            'deletes a release'
-          ],
-          [
-            'pry',
-            'opens up pry debugger'
-          ],
-          [
-            'release',
-            'views components of a release'
-          ],
-          [
-            'releases',
-            'lists all releases'
-          ],
-          [
-            'save',
-            'Saves metadata changes'
-          ],
-          [
-            'script',
-            'Execute a script containing multiple commands'
-          ],
-          [
-            'search',
-            'searches for components based on attributes'
-          ],
-          [
-            'set-write',
-            'Sets which metadata repo to write to if there are multiple'
-          ],
-          [
-            'set-write-url',
-            'view/update/create a component'
-          ],
-          [
-            'update',
-            'updates a components attributes'
-          ]
+            [
+                'build',
+                'Build release ISO and Tarballs'
+            ],
+            [
+                'clone',
+                'Clones one simp release into another'
+            ],
+            [
+                'component',
+                'create, view, or update a component'
+            ],
+            [
+                'delete',
+                'deletes a release'
+            ],
+            [
+                'pry',
+                'opens up pry debugger'
+            ],
+            [
+                'release',
+                'views components of a release'
+            ],
+            [
+                'releases',
+                'lists all releases'
+            ],
+            [
+                'save',
+                'Saves metadata changes'
+            ],
+            [
+                'script',
+                'Execute a script containing multiple commands'
+            ],
+            [
+                'search',
+                'searches for components based on attributes'
+            ],
+            [
+                'set-write',
+                'Sets which metadata repo to write to if there are multiple'
+            ],
+            [
+                'set-write-url',
+                'view/update/create a component'
+            ],
+            [
+                'update',
+                'updates a components attributes'
+            ]
         ]
 
         subcommands.each do |components|

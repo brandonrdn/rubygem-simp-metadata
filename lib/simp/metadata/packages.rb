@@ -1,6 +1,6 @@
 module Simp
   module Metadata
-    class Components
+    class Packages
       include Enumerable
       attr_accessor :engine
       attr_accessor :version
@@ -27,7 +27,7 @@ module Simp
       end
 
       def [](index)
-        Simp::Metadata::Component.new(engine, index, version)
+        Simp::Metadata::Package.new(engine, index, version)
       end
 
       def key?(name)
@@ -38,21 +38,21 @@ module Simp
         result = {}
         if version.nil?
           engine.sources.each do |_name, source|
-            source.components.keys.each do |name|
+            source.packages.keys.each do |name|
               result[name] = true
             end
           end
         else
           engine.sources.each do |_name, source|
             if source.releases.key?(version)
-              source.releases[version]['components'].each do |component, _data|
-                result[component] = true
-              end
+              source.releases[version]['packages'].each do |package, _data|
+                result[package] = true
+                end
             else
               source.release(version).each do |element, data|
-                if element == 'components'
-                  data.each do |component, _data|
-                    result[component] = true
+                if element == 'packages'
+                  data.each do |package, _data|
+                  result[package] = true
                   end
                 end
               end
@@ -64,7 +64,7 @@ module Simp
 
       def create(name, settings = {})
         unless key?(name)
-          engine.writable_source.components[name] = settings
+          engine.writable_source.packages[name] = settings
           engine.writable_source.dirty = true
         end
       end

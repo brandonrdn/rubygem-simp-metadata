@@ -43,9 +43,17 @@ module Simp
                     component[key] == value || component[key] == CGI.unescape(value)
                   end
                 end
-
-                puts component.name if result
+                if result
+                puts component.name
+                  break
+                end
               end
+              try = if options['edition'] == 'enterprise'
+                      '`-e community` or remove the `-e` option'
+                    else
+                      '`-e enterprise`'
+                    end
+              Simp::Metadata.critical("'#{argv.join(", ")}' is not valid with the specified edition `#{options['edition']}`. Try #{try}")
             end
 
             engine.save if root

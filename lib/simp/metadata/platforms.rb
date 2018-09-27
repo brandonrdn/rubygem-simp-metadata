@@ -1,23 +1,19 @@
 module Simp
   module Metadata
-    class Components
+    class Platforms
       include Enumerable
       attr_accessor :engine
       attr_accessor :version
       attr_accessor :type
+      attr_accessor :metadata_version
 
-      def initialize(engine, version = nil, type = nil)
+      def initialize(engine, version = nil)
         @engine = engine
         @version = version
-        @type = type
       end
 
       def to_s
         keys.to_s
-      end
-
-      def size
-        keys.size
       end
 
       def each
@@ -27,7 +23,7 @@ module Simp
       end
 
       def [](index)
-        Simp::Metadata::Component.new(engine, index, version)
+        Simp::Metadata::Platform.new(engine, version, index)
       end
 
       def key?(name)
@@ -38,21 +34,21 @@ module Simp
         result = {}
         if version.nil?
           engine.sources.each do |_name, source|
-            source.components.keys.each do |name|
-              result[name] = true
+            source.isos.each do |name, data|
+              result[data['platform']] = true
             end
           end
         else
           engine.sources.each do |_name, source|
             if source.releases.key?(version)
-              source.releases[version]['components'].each do |component, _data|
-                result[component] = true
+              source.releases[version]['platforms'].each do |platform, _data|
+                result[platform] = true
               end
             else
               source.release(version).each do |element, data|
-                if element == 'components'
-                  data.each do |component, _data|
-                    result[component] = true
+                if element == 'platforms'
+                  data.each do |platform, _data|
+                    result[platform] = true
                   end
                 end
               end
@@ -62,12 +58,7 @@ module Simp
         result.keys
       end
 
-      def create(name, settings = {})
-        unless key?(name)
-          engine.writable_source.components[name] = settings
-          engine.writable_source.dirty = true
-        end
-      end
+
     end
   end
 end
