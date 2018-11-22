@@ -6,6 +6,8 @@ require 'net/http'
 require 'uri'
 require 'openssl'
 require 'json'
+require 'fileutils'
+
 require 'simp/metadata/engine'
 require 'simp/metadata/fake_uri'
 require 'simp/metadata/source'
@@ -21,6 +23,8 @@ require 'simp/metadata/version'
 require 'simp/metadata/build'
 require 'simp/metadata/isos'
 require 'simp/metadata/iso'
+require 'simp/metadata/package'
+require 'simp/metadata/packages'
 
 module Simp
   module Metadata
