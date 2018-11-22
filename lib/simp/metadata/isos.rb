@@ -7,8 +7,9 @@ module Simp
       attr_accessor :type
       attr_accessor :iso
 
-      def initialize(engine)
+      def initialize(engine, version = nil)
         @engine = engine
+        @release_version = version
       end
 
       def to_s
@@ -29,13 +30,33 @@ module Simp
         Simp::Metadata::Iso.new(iso, iso_data(iso), platform_data(iso))
       end
 
+      def platforms
+        platforms = []
+        if version.nil?
+          engine.isos.keys.each do |iso, data|
+            platforms[data] = true
+          end
+        else
+          platforms = engine.releases[release_version]['isos']['platforms']
+        end
+        platforms
+      end
+
       def key?(name)
         keys.include?(name)
       end
 
       def images
-        engine.isos.keys
+        images = []
+        if version.nil?
+        engine.isos.keys.each do |platform, data|
+          data.each{|image| puts image }
+        end
+
+
+        end
       end
+
 
       def iso_data(iso)
         result = {}
@@ -53,6 +74,40 @@ module Simp
         result
       end
 
+      def keys
+        result = {}
+        if version.nil?
+          engine.sources.each do |_name, source|
+            source.isos.each do |platform, data|
+              data.each do |name, _value|
+              result[name] = true
+              end
+            end
+          end
+        else
+          platforms.each do |platform|
+            engine.releases[version]['isos']
+          end
+          engine.sources.each do |_name, source|
+            if source.releases.key?(version)
+              source.releases[version]['isos'].each do |_platform, data|
+                data.each { |name| result[name] = true }
+              end
+            else
+              source.release(version).each do |element, data|
+                if element == 'isos'
+                  data.each do |_platform, data|
+                    data.each { |name| result[name] = true }
+                  end
+                end
+              end
+            end
+          end
+        end
+        result.keys
+      end
+
+=begin
       def platform_data(iso)
         result = {}
         data_hash.each do |platform, images|
@@ -88,6 +143,7 @@ module Simp
         end
         hash
       end
+=end
 
     end
   end

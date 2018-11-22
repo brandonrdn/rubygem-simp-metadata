@@ -300,7 +300,7 @@ module Simp
       end
 
       def platforms
-        engine.releases[release].components['isos'].platforms
+        engine.releases[release]['isos'].platforms
       end
 
       def platform
@@ -684,6 +684,7 @@ protect=1
           end
 
         when 'iso'
+          require 'pry'; require 'pry-byebug'; binding.pry
           verify_commands
           create_build_dirs
           iso_build(buildable_isos)

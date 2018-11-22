@@ -48,7 +48,7 @@ module Simp
         retval = engine.sources['bootstrap_metadata']
         engine.sources.each do |_name, source|
           if source.releases.key?(release_version)
-            if source.releases[release_version].key?(name)
+            if source.releases[release_version]['components'].key?(name)
               retval = source
               break
             end
@@ -85,8 +85,8 @@ module Simp
       def get_from_release
         retval = {}
         if release_source.releases.key?(release_version)
-          if release_source.releases[release_version].key?(name)
-            retval = release_source.releases[release_version][name]
+          if release_source.releases[release_version]['components'].key?(name)
+            retval = release_source.releases[release_version]['components'][name]
           end
         else
           if release_source.release(release_version).key?(name)
@@ -122,7 +122,7 @@ module Simp
       end
 
       def keys
-        %w(platforms component_type authoritative asset_name extension format module_name type url method extract branch tag ref version release_source component_source target revision)
+        %w(component_type authoritative asset_name extension format module_name type url method extract branch tag ref version release_source component_source target revision)
       end
 
       def [](index)
@@ -133,10 +133,6 @@ module Simp
         keys.each do |key|
           yield key, self[key]
         end
-      end
-
-      def platforms
-        get_from_release['platforms']
       end
 
       def real_extension
@@ -558,20 +554,20 @@ module Simp
         sources.each do |source|
           if source =~ /^https?:/
             file_check = `curl -sLI #{source}/#{file} | head -n 1 | awk '{print $2}'`.chomp
-              if file_check == '200'
-                `wget -q -P #{destination} #{source}/#{file}`
-                #File.open("#{destination}/#{file}", "w") do |opened|
-                #HTTParty.get("#{source}/#{file}", stream_body: true) do |fragment|
-                #  opened.write(fragment)
-                #end
+            if file_check == '200'
+              `wget -q -P #{destination} #{source}/#{file}`
+              #File.open("#{destination}/#{file}", "w") do |opened|
+              #HTTParty.get("#{source}/#{file}", stream_body: true) do |fragment|
+              #  opened.write(fragment)
+              #end
               #end
             end
-              elsif File.exist?("#{source}/#{file}")
-              FileUtils.cp "#{source}/#{file}", destination
-            end
-            return if File.exist?("#{destination}/#{file}")
+          elsif File.exist?("#{source}/#{file}")
+            FileUtils.cp "#{source}/#{file}", destination
           end
+          return if File.exist?("#{destination}/#{file}")
         end
       end
     end
   end
+end
