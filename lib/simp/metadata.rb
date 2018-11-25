@@ -21,10 +21,12 @@ require 'simp/metadata/locations'
 require 'simp/metadata/location'
 require 'simp/metadata/version'
 require 'simp/metadata/build'
-require 'simp/metadata/isos'
-require 'simp/metadata/iso'
+require 'simp/metadata/platforms'
+require 'simp/metadata/platform'
 require 'simp/metadata/package'
 require 'simp/metadata/packages'
+require 'simp/metadata/iso'
+require 'simp/metadata/isos'
 
 module Simp
   module Metadata

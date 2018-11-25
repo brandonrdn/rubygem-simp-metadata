@@ -36,6 +36,9 @@ module Simp
               opts.on('-V', '--verbose', 'Detailed output for all commands') do |verbose|
                 options['verbose'] = verbose
               end
+              opts.on('-P', '--preserve', 'Preserves the build directory and all files used during build') do |preserve|
+                options['preserve'] = preserve
+              end
             end
             engine, root = get_engine(engine, options)
             simp_build = Simp::Metadata::Build.new(engine, nil, options['edition'])
@@ -65,7 +68,7 @@ module Simp
               opts.on('-R', '--rpm_cache [folder]', 'Folder to cache RPMs during build (pre-existing RPMs will be used in the build') do |rpm_cache|
                 options['rpm_cache'] = rpm_cache
               end
-              opts.on('-p', '--preserve', 'Preserves the build directory and all files used during build') do |preserve|
+              opts.on('-P', '--preserve', 'Preserves the build directory and all files used during build') do |preserve|
                 options['preserve'] = preserve
               end
             end

@@ -57,7 +57,7 @@ module Simp
       def fetch_data(item)
         package = get_from_package
         release = get_from_release
-        iso = get_from_iso
+        platform = get_from_platform
         if release.key?(item)
           release[item]
         else

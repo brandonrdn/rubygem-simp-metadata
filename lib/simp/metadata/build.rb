@@ -1,6 +1,6 @@
 require 'simp/metadata/components'
 require 'simp/metadata/release'
-require 'simp/metadata/isos'
+require 'simp/metadata/platforms'
 require 'httparty'
 require 'ruby-progressbar'
 require 'find'
@@ -60,7 +60,16 @@ module Simp
       end
 
       def iso
-        @iso
+        if @iso
+          @iso.to_s
+        else
+          iso_names.each do |name|
+            @iso = name
+            if primary?(iso)
+              name
+            end
+          end
+        end
       end
 
       def components
@@ -80,7 +89,9 @@ module Simp
       end
 
       def preserve
-        options['preserve']
+        if options['preserve'] && buildable_isos.size == 1
+          options['preserve']
+        end
       end
 
       def os_version
@@ -294,18 +305,8 @@ module Simp
         end
       end
 
-
-      def iso_data(iso)
-        engine.isos[iso].iso_data(iso)
-      end
-
       def platforms
-        engine.releases[release]['isos'].platforms
-      end
-
-      def platform
-        iso = @iso
-        engine.isos[iso].platform
+        engine.releases[release].platforms.keys
       end
 
       def validate_size(iso)
@@ -336,6 +337,7 @@ module Simp
       end
 
       def dependency_check(iso)
+        require 'pry'; require 'pry-byebug'; binding.pry
         result = {iso => true}
         unless engine.isos[iso].dependencies.nil?
           engine.isos[iso].dependencies.each do |dep|
@@ -346,41 +348,58 @@ module Simp
       end
 
       def valid_isos
-        engine.isos.keys
-      end
-
-      def iso_names(platform)
-        result = {}
-        valid_isos.each do |image|
-          if engine.isos[image].platform == platform
-            result[image] = true if engine.isos[image].primary
+        hash = {}
+        engine.sources['simp-metadata'].platforms.each do |_platform, data|
+          data.each do |name,_info|
+            hash[name] = true
           end
         end
-        result.keys
+        hash.keys
+      end
+
+      def iso_names
+        engine.platforms[platform].images
       end
 
       def release_isos
-        result = []
-        platforms.each do |platform|
-          result.push(iso_names(platform))
+        engine.platforms[platform].images
         end
-        result.flatten
-      end
 
       def validate_iso(iso)
         validate_size(iso)
         validate_checksum(iso)
       end
 
+      def primary_iso
+        if iso_names.size == 1
+          iso_names
+        else
+          iso_names.each do |iso|
+            if primary?(iso)
+              iso
+            end
+          end
+        end
+      end
+
+      def primary?(iso)
+        result = nil
+        if engine.isos[iso].primary
+          result = true
+        end
+        result
+      end
+
       def buildable_isos
         result = []
         if options['build_iso']
           @iso = options['build_iso']
-          result.push(options['build_iso']) if engine.isos[@iso].primary
+          result.push(options['build_iso']) if primary?(iso)
         else
-          release_isos.each do |iso|
+          local_isos.each do |iso|
+            next if iso.match?('SIMP-')
             if local_isos.include?(iso) && valid_isos.include?(iso)
-              result.push(iso) if engine.isos[iso].primary
+              result.push(iso) if primary?(iso)
             end
           end
         end
@@ -555,7 +574,7 @@ protect=1
       def iso_build(buildable_isos)
         # Grab build ISO
         buildable_isos.each do |build_iso|
-          stage_header("Starting build for #{build_iso}")
+          stage_header("Starting build for #{platform}")
           @iso = build_iso
 
           # Create tempdir
