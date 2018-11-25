@@ -18,8 +18,8 @@ module Simp
         Simp::Metadata::Packages.new(engine, version, type)
       end
 
-      def isos
-        Simp::Metadata::Isos.new(engine, version)
+      def platforms
+        Simp::Metadata::Platforms.new(engine, version)
       end
 
       def puppetfile_component(component, _options)

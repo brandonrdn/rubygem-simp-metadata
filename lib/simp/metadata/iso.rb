@@ -2,60 +2,77 @@ module Simp
   module Metadata
     class Iso
       include Enumerable
+      attr_accessor :engine
       attr_accessor :release_version
-      attr_accessor :data
-      attr_accessor :name
 
-      def initialize(name, data, platform_data)
+      def initialize(engine, version, name)
+        @engine = engine
         @name = name
-        @data = data
-        @platform_data = platform_data
-      end
-
-      def name
-        @name
-      end
-
-      def image
-        @name
-      end
-
-      def data
-        @data
+        @release_version = version
+        @platform = platform
       end
 
       def to_s
         name
       end
 
-      def platform_data
-        @platform_data
+      def name
+        @name
+      end
+
+      def iso_source
+        retval = engine.sources['bootstrap_metadata']
+        engine.sources.each do |_name, source|
+          next if source.platforms.nil?
+          source.platforms.each do |_platform, data|
+            if data.key?(name)
+              retval = data
+              break
+            end
+          end
+        end
+        retval
+      end
+
+      def platform
+        engine.sources.each do |_name, source|
+          next if sources.platforms.nil?
+          source.platforms.each do |platform, data|
+            if data.keys.include?(name)
+              platform.to_s
+            end
+          end
+        end
+      end
+
+      def get_from_iso
+        iso_source[name]
+      end
+
+      def size
+        get_from_iso['size']
+      end
+
+      def checksum
+        get_from_iso['checksum']
       end
 
       def primary
-        get_from_data['primary']
+        get_from_iso['primary']
       end
 
-      # def fetch_data(item)
-      #   result = []
-      #   data.each do |kernel, array|
-      #     array.each do |hash|
-      #       hash.each do |key, value|
-      #       if key == item
-      #         result.push(value)
-      #       end
-      #       end
-      #     end
-      #   end
-      #   result
-      # end
-
-      def get_from_data
-        data[name]
+      def dependencies
+        result = {}
+        data = engine.platforms[platform].keys
+        return if data.keys.size == 1
+        data.each do |dep|
+          result[dep] = true unless dep == name
+        end
+        result
       end
 
       def keys
-        %w(image size checksum name platform dependencies)
+        %w(name size checksum platform primary dependencies)
       end
 
       def [](index)
@@ -66,44 +83,6 @@ module Simp
         keys.each do |key|
           yield key, self[key]
         end
-      end
-
-      def iso_data(iso)
-        data[name].each do |set|
-          set.each do |key,value|
-            if key == name
-              if name == iso
-                set
-              end
-            end
-          end
-        end
-      end
-
-      def platform
-        get_from_data['platform']
-      end
-
-      def size
-        get_from_data['size']
-      end
-
-      def checksum
-        get_from_data['checksum']
-      end
-
-      def dependencies
-        result = {}
-        platform_data.each do |platform, images|
-          images.each do |img, data|
-            unless img == image
-              if data['primary'].nil?
-              result[img] = true
-              end
-            end
-          end
-        end
-        result.keys unless result.empty?
       end
 
     end
