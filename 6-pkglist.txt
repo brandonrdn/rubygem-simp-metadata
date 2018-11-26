@@ -911,6 +911,7 @@ perl-devel
 perl-libs
 perl-libwww-perl
 perl-version
+perll-Time-modules
 pexpect
 phonon-backend-gstreamer
 php
