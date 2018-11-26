@@ -23,30 +23,17 @@ module Simp
       def iso_source
         retval = engine.sources['bootstrap_metadata']
         engine.sources.each do |_name, source|
-          next if source.platforms.nil?
-          source.platforms.each do |_platform, data|
-            if data.key?(name)
-              retval = data
-              break
-            end
+          next if source.isos.nil?
+          if source.isos.key?(name)
+            retval = source
+            break
           end
         end
         retval
       end
 
-      def platform
-        engine.sources.each do |_name, source|
-          next if sources.platforms.nil?
-          source.platforms.each do |platform, data|
-            if data.keys.include?(name)
-              platform.to_s
-            end
-          end
-        end
-      end
-
       def get_from_iso
-        iso_source[name]
+        iso_source.isos[name]
       end
 
       def size
@@ -61,14 +48,24 @@ module Simp
         get_from_iso['primary']
       end
 
+      def platform
+        get_from_iso['platform']
+      end
+
       def dependencies
         result = {}
-        data = engine.platforms[platform].keys
-        return if data.keys.size == 1
-        data.each do |dep|
-          result[dep] = true unless dep == name
+        engine.sources.each do |_name, source|
+          next if source.isos.nil?
+          source.isos.each do |image, data|
+            next unless data['platform'] == platform
+            result[image] = true
+          end
         end
-        result
+        if result.keys.size > 0
+          result.keys
+        else
+          nil
+        end
       end
 
       def keys

@@ -12,12 +12,12 @@ module Simp
       attr_accessor :data
       attr_accessor :components
       attr_accessor :edition
-      attr_accessor :platforms
+      attr_accessor :isos
 
       def initialize(edition)
         @releases = {}
         @components = {}
-        @platforms = {}
+        @isos = {}
         @edition = edition
 
         case edition

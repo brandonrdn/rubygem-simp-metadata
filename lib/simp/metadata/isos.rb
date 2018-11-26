@@ -5,12 +5,10 @@ module Simp
       attr_accessor :engine
       attr_accessor :version
       attr_accessor :type
-      attr_accessor :platform
 
-      def initialize(engine, platform = nil, version = nil)
+      def initialize(engine, version = nil)
         @engine = engine
         @version = version
-        @platform = platform
       end
 
       def to_s
@@ -34,18 +32,8 @@ module Simp
       def keys
         result = {}
         engine.sources.each do |_name, source|
-          source.platforms.each do |name, data|
-            if platform.nil?
-              data.each do |iso, _data|
-                result[iso] = true
-              end
-            else
-              if @platform == name
-                data.each do |iso, _data|
-                  result[iso] = true
-                end
-              end
-            end
+          source.isos.each do |name, data|
+            result[name] = true
           end
         end
         result.keys
