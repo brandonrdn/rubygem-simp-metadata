@@ -22,6 +22,10 @@ module Simp
         Simp::Metadata::Platforms.new(engine, version)
       end
 
+      def isos
+        Simp::Metdata::Isos.new(engine, version)
+      end
+
       def puppetfile_component(component, _options)
         contents = []
         contents << "mod '#{component.name('puppetfile')}',"

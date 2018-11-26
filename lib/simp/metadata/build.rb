@@ -89,17 +89,18 @@ module Simp
       end
 
       def preserve
-        if options['preserve'] && buildable_isos.size == 1
+        if options['preserve']
           options['preserve']
         end
       end
 
       def os_version
-        if options['os_version']
-          options['os_version']
-        else
-          'el7'
-        end
+        #if options['os_version']
+        #  options['os_version']
+        #else
+        #  'el7'
+        #end
+        "el#{iso.split('-')[1].chr}"
       end
 
       def el_version
@@ -107,11 +108,12 @@ module Simp
       end
 
       def os_family
-        if options['os_family']
-          options['os_family']
-        else
-          'CentOS'
-        end
+        #if options['os_family']
+        #  options['os_family']
+        #else
+        #  'CentOS'
+        #end
+        iso.split('-')[0]
       end
 
       def build_dir
@@ -306,7 +308,15 @@ module Simp
       end
 
       def platforms
-        engine.releases[release].platforms.keys
+        result = {}
+        engine.releases[release].isos.each do |_name, data|
+          result[data['platform']] = true unless result.keys.include?(data['platform'])
+          end
+        result.keys
+      end
+
+      def platform
+        engine.isos[iso].platform
       end
 
       def validate_size(iso)
@@ -336,8 +346,8 @@ module Simp
         end
       end
 
+
       def dependency_check(iso)
-        require 'pry'; require 'pry-byebug'; binding.pry
         result = {iso => true}
         unless engine.isos[iso].dependencies.nil?
           engine.isos[iso].dependencies.each do |dep|
@@ -348,21 +358,15 @@ module Simp
       end
 
       def valid_isos
-        hash = {}
-        engine.sources['simp-metadata'].platforms.each do |_platform, data|
-          data.each do |name,_info|
-            hash[name] = true
-          end
-        end
-        hash.keys
+        engine.sources['simp-metadata'].isos.keys
       end
 
       def iso_names
-        engine.platforms[platform].images
+        engine.isos.release_isos
       end
 
       def release_isos
-        engine.platforms[platform].images
+        engine.releases[release].platforms
         end
 
       def validate_iso(iso)
@@ -574,8 +578,14 @@ protect=1
       def iso_build(buildable_isos)
         # Grab build ISO
         buildable_isos.each do |build_iso|
-          stage_header("Starting build for #{platform}")
           @iso = build_iso
+
+          if File.exist?("#{iso_cache}/#{iso_name}")
+            stage_header("SIMP ISO #{iso_name} already exists! Not building for existing ISO")
+            next
+          end
+
+          stage_header("Starting build for #{platform}")
 
           # Create tempdir
           FileUtils.makedirs(extract_dir)
@@ -585,7 +595,7 @@ protect=1
             isos = dependency_check(build_iso)
             if isos.length > 1
               puts "INFO: Dependencies found for #{build_iso}"
-              puts "INFO: Utilizing ISOS: #{isos.each {|iso| puts iso}}"
+              puts "INFO: Utilizing ISOS: #{isos.to_s}"
             else
               puts "INFO: No dependencies found for #{build_iso}"
             end
@@ -600,6 +610,7 @@ protect=1
               # Extract ISO
               stage_header("Extracting ISO #{iso}")
               extract_iso("#{iso_cache}/#{iso}", extract_dir)
+            end
 
               # Add Overlay tarball
               stage_header("Adding SIMP Overlay Tarball")
@@ -612,6 +623,7 @@ protect=1
               # Grab necessary packages
               stage_header("Downloading Packages")
               packages = []
+            puts "USING FILE: #{os_family}-#{el_version}-packages.yaml"
               File.open("#{__dir__}/../../../#{os_family}-#{el_version}-packages.yaml").each {|package| packages << package.chomp}
 
               packages.each do |package|
@@ -635,7 +647,11 @@ protect=1
                 if valid_arch.include?(arch) && !Dir.exist?("#{extract_dir}/SIMP/#{arch}")
                   FileUtils.makedirs("#{extract_dir}/SIMP/#{arch}")
                 end
-                download(dest, source, file)
+                archive_dirs = ["https://download.simp-project.com/simp/archive/yum/Releases/#{release}/#{os_version.upcase}/core", "https://download.simp-project.com/simp/archive/yum/Releases/#{release}/#{os_version.upcase}/dependencies"]
+                archive_dirs.each do |archive|
+                  download(dest, archive, file)
+                end
+                download(dest, source, file) unless File.exist?("#{dest}/#{file}")
 
                 Simp::Metadata.critical("#{file} NOT FOUND") unless File.exist?("#{dest}/#{file}")
                 if progress
@@ -677,8 +693,9 @@ protect=1
                 %x(#{iso_build_command})
               end
               stage_header("Finished building #{iso_name}")
-            end
           end
+          FileUtils.makedirs "#{build_dir}/../#{platform}"
+          FileUtils.move build_dir, "#{build_dir}/../#{platform}"
         end
         stage_header("Finished Build Process")
       end
