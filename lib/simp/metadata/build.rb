@@ -623,7 +623,6 @@ protect=1
               # Grab necessary packages
               stage_header("Downloading Packages")
               packages = []
-            puts "USING FILE: #{os_family}-#{el_version}-packages.yaml"
               File.open("#{__dir__}/../../../#{os_family}-#{el_version}-packages.yaml").each {|package| packages << package.chomp}
 
               packages.each do |package|
@@ -720,7 +719,6 @@ protect=1
           end
 
         when 'iso'
-          require 'pry'; require 'pry-byebug'; binding.pry
           verify_commands
           create_build_dirs
           iso_build(buildable_isos)
