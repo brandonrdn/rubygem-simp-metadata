@@ -16,6 +16,23 @@ module Simp
             when 'components'
               puts engine.releases[options['release']].components.keys.join("\n")
 
+            when 'platforms'
+              puts engine.releases[options['release']].platforms.keys.join("\n")
+
+            when 'isos'
+              platform = argv[1]
+              platforms = engine.releases[options['release']].platforms.keys
+              if platform
+                output = engine.releases[options['release']].platforms[platform].images
+              else
+                output = engine.releases[options['release']].isos.keys
+              end
+              puts output
+
+            when 'test'
+              require 'pry'; require 'pry-byebug'; binding.pry
+              puts engine.releases[options['release']].platforms['CentOS-7.4-x86_64'].images
+
             when 'puppetfile'
               type = argv[1]
               puts engine.releases[options['release']].puppetfile('type' => type)

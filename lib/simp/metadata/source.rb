@@ -16,6 +16,7 @@ module Simp
       attr_accessor :edition
       attr_accessor :engine
       attr_accessor :isos
+      attr_accessor :platforms
 
       def initialize(args)
         unless args.key?(:engine)
@@ -170,6 +171,7 @@ module Simp
         @releases = @data['releases'] unless @data['releases'].nil?
         @components = @data['components'] unless @data['components'].nil?
         @isos = @data['isos'] unless @data['isos'].nil?
+        @platforms = @data['platforms'] unless @data['platforms'].nil?
       end
 
       def deep_merge(target_hash, source_hash)

@@ -161,7 +161,7 @@ module Simp
 
       def create_build_dirs
         FileUtils.makedirs(build_dir)
-        [tar_cache, iso_cache, rpm_cache].each {|dir| FileUtils.makedirs(dir)}
+        [tar_cache, iso_cache, rpm_cache, "#{build_dir}/built_rpms"].each {|dir| FileUtils.makedirs(dir)}
       end
 
       def edition
@@ -182,6 +182,14 @@ module Simp
 
       def component_tarball_name
         "#{prefix}-#{release}.#{os_version}-components.tar.gz"
+      end
+
+      def package_tarball_name
+        "#{prefix}-#{release}.#{os_version}-package.tar.gz"
+      end
+
+      def built_rpm_tarball_name
+        "#{prefix}-#{release}.#{os_version}-built_rpms.tar.gz"
       end
 
       def build_tarball_name
@@ -241,11 +249,9 @@ module Simp
                end
         FileUtils.makedirs(dest)
         component.download(dest, options['source'])
-        puts "-" * 80
-        puts "Name: #{component.name}"
-        puts "type: #{type}"
-        puts "-" * 80
+        return if File.exist?("#{dest}/#{rpm_name}")
         component.build(dest) unless File.exist?("#{dest}/#{rpm_name}")
+        FileUtils.cp("#{dest}/#{rpm_name}", "#{build_dir}/built_rpms")
         Simp::Metadata.critical("#{rpm_name} NOT FOUND") unless File.exist?("#{dest}/#{rpm_name}")
       end
 
@@ -271,13 +277,25 @@ module Simp
 
           # Transfer RPMs if needed
           if preserve
-            FileUtils.move('./*.rpm', "#{rpm_cache}")
-          else
+            rpms = Dir.glob(File.join("**", "*.rpm"))
+            rpms.each {|rpm| FileUtils.move rpm, rpm_cache}
           end
         end
 
         # Purge build dirs unless preserving
         build_purge unless preserve
+      end
+
+      def built_rpm_tarball_build
+        Dir.chdir("#{build_dir}/built_rpms") do
+          Simp::Metadata.run("tar -cvzf #{build_dir}/Tarballs/#{built_rpm_tarball_name} ./")
+        end
+      end
+
+      def package_tarball_build
+        Dir.chdir("#{build_dir}/packages") do
+          Simp::Metadata.run("tar -cvzf #{build_dir}/Tarballs/#{package_tarball_name} ./")
+        end
       end
 
       def build_tarball_build
@@ -311,7 +329,7 @@ module Simp
         result = {}
         engine.releases[release].isos.each do |_name, data|
           result[data['platform']] = true unless result.keys.include?(data['platform'])
-          end
+        end
         result.keys
       end
 
@@ -367,7 +385,7 @@ module Simp
 
       def release_isos
         engine.releases[release].platforms
-        end
+      end
 
       def validate_iso(iso)
         validate_size(iso)
@@ -523,7 +541,6 @@ protect=1
 
         fail("#{dir} does not exist!") unless File.directory?(dir)
 
-        FileUtils.makedirs("#{extract_dir}/TESTING")
         Dir.mktmpdir do |temp_dir|
           Dir.chdir(temp_dir) do
             FileUtils.makedirs('repos/base')
@@ -612,86 +629,91 @@ protect=1
               extract_iso("#{iso_cache}/#{iso}", extract_dir)
             end
 
-              # Add Overlay tarball
-              stage_header("Adding SIMP Overlay Tarball")
-              overlay_tarball_build
-              `tar -xvf #{tar_cache}/#{overlay_tarball_name}`
+            # Add Overlay tarball
+            stage_header("Adding SIMP Overlay Tarball")
+            overlay_tarball_build
+            `tar -xvf #{tar_cache}/#{overlay_tarball_name}`
 
-              # Add Build tarball
-              stage_header('Adding SIMP Build Tarball')
+            # Add Build tarball
+            stage_header('Adding SIMP Build Tarball')
 
-              # Grab necessary packages
-              stage_header("Downloading Packages")
-              packages = []
-              File.open("#{__dir__}/../../../#{os_family}-#{el_version}-packages.yaml").each {|package| packages << package.chomp}
+            # Grab necessary packages
+            stage_header("Downloading Packages")
+            packages = []
+            File.open("#{__dir__}/../../../#{os_family}-#{el_version}-packages.yaml").each {|package| packages << package.chomp}
 
-              packages.each do |package|
-                packages.delete(File.dirname(package))
+            packages.each do |package|
+              packages.delete(File.dirname(package))
+            end
+            progress = ProgressBar.create(:title => 'Downloading', :total => packages.size)
+
+            packages.each do |package|
+              url = package.split(': ')[-1].chomp
+              package_name = package.split(':')[0].chomp
+              uri = URI.parse(url)
+              file = File.basename(uri.path).chomp
+              source = uri.to_s.reverse.split('/', 2).last.reverse
+              valid_arch = ['noarch', 'x86_64', 'arm']
+              arch = file.split('.rpm')[0].split('.')[-1].chomp
+              dest = if valid_arch.include?(arch)
+                       "#{extract_dir}/SIMP/#{arch}"
+                     else
+                       "#{extract_dir}/SIMP/noarch"
+                     end
+              if valid_arch.include?(arch) && !Dir.exist?("#{extract_dir}/SIMP/#{arch}")
+                FileUtils.makedirs("#{extract_dir}/SIMP/#{arch}")
               end
-              progress = ProgressBar.create(:title => 'Downloading', :total => packages.size)
-
-              packages.each do |package|
-                url = package.split(': ')[-1].chomp
-                package_name = package.split(':')[0].chomp
-                uri = URI.parse(url)
-                file = File.basename(uri.path).chomp
-                source = uri.to_s.reverse.split('/', 2).last.reverse
-                valid_arch = ['noarch', 'x86_64', 'arm']
-                arch = file.split('.rpm')[0].split('.')[-1].chomp
-                dest = if valid_arch.include?(arch)
-                         "#{extract_dir}/SIMP/#{arch}"
-                       else
-                         "#{extract_dir}/SIMP/noarch"
-                       end
-                if valid_arch.include?(arch) && !Dir.exist?("#{extract_dir}/SIMP/#{arch}")
-                  FileUtils.makedirs("#{extract_dir}/SIMP/#{arch}")
-                end
-                archive_dirs = ["https://download.simp-project.com/simp/archive/yum/Releases/#{release}/#{os_version.upcase}/core", "https://download.simp-project.com/simp/archive/yum/Releases/#{release}/#{os_version.upcase}/dependencies"]
-                archive_dirs.each do |archive|
-                  download(dest, archive, file)
-                end
-                download(dest, source, file) unless File.exist?("#{dest}/#{file}")
-
-                Simp::Metadata.critical("#{file} NOT FOUND") unless File.exist?("#{dest}/#{file}")
-                if progress
-                  progress.increment
-                else
-                  print "#"
-                end
+              archive_dirs = ["https://download.simp-project.com/simp/archive/yum/Releases/#{release}/#{os_version.upcase}/core", "https://download.simp-project.com/simp/archive/yum/Releases/#{release}/#{os_version.upcase}/dependencies"]
+              archive_dirs.each do |archive|
+                download(dest, archive, file)
               end
+              download(dest, source, file) unless File.exist?("#{dest}/#{file}")
+              FileUtils.copy "#{dest}/#{file}", "#{build_dir}/packages" if File.exist?("#{dest}/#{file}")
 
-              # Purge package folders
-              stage_header("Pruning unneeded packages")
-              package_purge("#{extract_dir}/Packages")
-
-              # Createrepo
-              dirs = [
-                  "#{extract_dir}/SIMP/noarch",
-                  "#{extract_dir}/SIMP/x86_64",
-                  "#{extract_dir}/Packages"
-              ]
-
-              dirs.each do |dir|
-                Dir.chdir(dir) do
-                  `createrepo .`
-                end
+              Simp::Metadata.critical("#{file} NOT FOUND") unless File.exist?("#{dest}/#{file}")
+              if progress
+                progress.increment
+              else
+                print "#"
               end
+            end
 
-              # Repoclosure
-              stage_header("Verifying dependencies")
-              repoclosure(extract_dir)
+            # Purge package folders
+            stage_header("Pruning unneeded packages")
+            package_purge("#{extract_dir}/Packages")
 
-              # make repo
-              if iso == isos.last
-                makerepo(extract_dir)
+            # Createrepo
+            dirs = [
+                "#{extract_dir}/SIMP/noarch",
+                "#{extract_dir}/SIMP/x86_64",
+                "#{extract_dir}/Packages"
+            ]
+
+            dirs.each do |dir|
+              Dir.chdir(dir) do
+                `createrepo .`
               end
+            end
 
-              # Create ISO
-              stage_header("Creating #{iso_name}")
-              Dir.chdir(iso_cache) do
-                %x(#{iso_build_command})
-              end
-              stage_header("Finished building #{iso_name}")
+            # Repoclosure
+            stage_header("Verifying dependencies")
+            repoclosure(extract_dir)
+
+            # make repo
+            if iso == isos.last
+              makerepo(extract_dir)
+            end
+
+            # Build tarballs
+            built_rpm_tarball_build
+            package_tarball_build
+
+            # Create ISO
+            stage_header("Creating #{iso_name}")
+            Dir.chdir(iso_cache) do
+              %x(#{iso_build_command})
+            end
+            stage_header("Finished building #{iso_name}")
           end
           FileUtils.makedirs "#{build_dir}/../#{platform}"
           FileUtils.move build_dir, "#{build_dir}/../#{platform}"
