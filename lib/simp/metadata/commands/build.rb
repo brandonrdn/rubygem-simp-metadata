@@ -15,8 +15,11 @@ module Simp
           when 'iso'
             options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata build iso [-v <release>] [-p <el6|el7>] [-d <os_family>]'
-              opts.on('-d', '--os_family', 'Distribution to use (CentOS or RedHat)') do |distro|
-                options['os_family'] = distro
+              opts.on('-d', '--distribution [distro]', 'Distribution to use (CentOS or RedHat). If set, will only build from <distro> ISOs') do |distro|
+                options['distribution'] = distro
+              end
+              opts.on('-b', '--build_version', 'Specify which EL version you want to build on (6 or 7). If set, will only build from this version of base ISOs') do |build_version|
+                options['build_version'] = build_version
               end
               opts.on('-T', '--tar_cache [folder]', 'Folder to cache tarballs during build (pre-existing tarballs will be used in the build') do |tar_cache|
                 options['tar_cache'] = tar_cache
@@ -51,8 +54,8 @@ module Simp
               opts.banner << "     component: Builds a tarball of release components with the SIMP/noarch structure\n"
               opts.banner << "     build: Creates a tarball of build files\n"
               opts.banner << "     overlay: Builds the entire overlay tarball(default)\n\n"
-              opts.on('-d', '--os_family [distro]', 'Distribution to use: CentOS, RedHat') do |distro|
-                options['os_family'] = distro
+              opts.on('-d', '--distribution [distro]', 'Distribution to use: CentOS, RedHat') do |distro|
+                options['distribution'] = distro
               end
               options['build_dir'] = Dir.pwd
               opts.on('-b', '--build_dir [folder]', 'Directory to build in (Default: ./build') do |build_dir|

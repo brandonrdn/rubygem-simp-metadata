@@ -103,16 +103,15 @@ module Simp
         "el#{iso.split('-')[1].chr}"
       end
 
+      def build_version
+        options['build_os_version']
+      end
+
       def el_version
         os_version[-1]
       end
 
       def os_family
-        #if options['os_family']
-        #  options['os_family']
-        #else
-        #  'CentOS'
-        #end
         iso.split('-')[0]
       end
 
@@ -331,6 +330,14 @@ module Simp
           result[data['platform']] = true unless result.keys.include?(data['platform'])
         end
         result.keys
+      end
+
+      def build_platform
+        options['platform']
+      end
+
+      def distribution
+        options['distribution']
       end
 
       def platform
@@ -596,6 +603,15 @@ protect=1
         # Grab build ISO
         buildable_isos.each do |build_iso|
           @iso = build_iso
+
+          # Skip ISO if it doesn't match specified build platform
+          if build_platform
+            next unless platform.contain?(build_platform)
+          end
+
+          if build_version
+            next if el_version != build_version
+          end
 
           if File.exist?("#{iso_cache}/#{iso_name}")
             stage_header("SIMP ISO #{iso_name} already exists! Not building for existing ISO")
