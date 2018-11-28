@@ -161,7 +161,7 @@ module Simp
 
       def create_build_dirs
         FileUtils.makedirs(build_dir)
-        [tar_cache, iso_cache, rpm_cache, "#{build_dir}/built_rpms"].each {|dir| FileUtils.makedirs(dir)}
+        [tar_cache, iso_cache, rpm_cache, "#{build_dir}/built_rpms", "#{build_dir}/packages"].each {|dir| FileUtils.makedirs(dir)}
       end
 
       def edition
