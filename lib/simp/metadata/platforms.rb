@@ -33,8 +33,8 @@ module Simp
         result = {}
         if version.nil?
           engine.sources.each do |_name, source|
-            source.platforms.keys.each do |name|
-              result[name] = true
+            source.isos.each do |name, data|
+              result[data['platform']] = true
             end
           end
         else
@@ -57,14 +57,6 @@ module Simp
         result.keys
       end
 
-      def images
-        images = []
-        if version.nil?
-          keys.each do |platform, data|
-            data.each {|image| puts image}
-          end
-        end
-      end
 
     end
   end

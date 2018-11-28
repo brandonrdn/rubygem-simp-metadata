@@ -16,25 +16,22 @@ module Simp
         @platform
       end
 
-      def platform_source
-        retval = engine.sources['bootstrap_metadata']
-        engine.sources.each do |_name, source|
-          next if source.platforms.nil?
-          if source.platforms.key?(name)
-            retval = source
-            break
-          end
-        end
-        retval
+      def key?(name)
+        keys.include?(name)
       end
 
       def images
-        images = {}
-        hash = platform_source.platforms[name]
-        hash.each do |iso, _data|
-          images[iso] = true
+        hash = {}
+        retval = engine.sources['bootstrap_metadata']
+        engine.sources.each do |_name, source|
+          next if source.isos.nil?
+          source.isos.each do |iso,data|
+            if data['platform'] == name
+            hash[iso] = data
+          end
+          end
         end
-        images.keys
+        hash.keys
       end
 
       def to_s

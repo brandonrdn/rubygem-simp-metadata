@@ -23,7 +23,7 @@ module Simp
       end
 
       def isos
-        Simp::Metdata::Isos.new(engine, version)
+        Simp::Metadata::Isos.new(engine, version)
       end
 
       def puppetfile_component(component, _options)
