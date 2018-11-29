@@ -332,11 +332,7 @@ module Simp
         result.keys
       end
 
-      def build_platform
-        options['platform']
-      end
-
-      def distribution
+      def build_distribution
         options['distribution']
       end
 
@@ -605,8 +601,8 @@ protect=1
           @iso = build_iso
 
           # Skip ISO if it doesn't match specified build platform
-          if build_platform
-            next unless platform.contain?(build_platform)
+          if build_distribution
+            next unless platform.include?(build_distribution)
           end
 
           if build_version
