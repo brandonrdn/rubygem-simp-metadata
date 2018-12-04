@@ -616,6 +616,9 @@ protect=1
 
           stage_header("Starting build for #{platform}")
 
+          # Create Build Directories
+          create_build_dirs
+          
           # Create tempdir
           FileUtils.makedirs(extract_dir)
           Dir.chdir(extract_dir) do
@@ -754,7 +757,6 @@ protect=1
 
         when 'iso'
           verify_commands
-          create_build_dirs
           iso_build(buildable_isos)
 
         else
