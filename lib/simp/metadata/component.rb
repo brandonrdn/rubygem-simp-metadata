@@ -303,6 +303,22 @@ module Simp
         ver
       end
 
+      def version?
+        Dir.mktmpdir do |dir|
+          Dir.chdir(dir) do
+            system("git clone #{url} > /dev/null 2>&1")
+            Dir.chdir("./#{module_name}") do
+              exitcode = Simp::Metadata.run("git checkout #{version} > /dev/null 2>&1")
+              if exitcode == 0
+                true
+              else
+                false
+              end
+            end
+          end
+        end
+      end
+
       def rpm_basename
         if component_type == 'puppet-module'
           if name =~ /pupmod-*/
