@@ -59,6 +59,30 @@ module Simp
               exit 6
             end
 
+          when 'find_release'
+            options = defaults(argv) do |opts, options|
+              opts.banner = "Usage: simp-metadata component find_release <component> <attribute> <value>\n"
+              opts.banner << "  Output releases where specified components <attribute> matches <value>"
+              opts.on('-s', '--show-all', 'Shows all release matches, including unstable and nightlies') do |show_all|
+                options['show_all'] = show_all
+              end
+            end
+            engine, root = get_engine(engine, options)
+            component = argv[1]
+            attribute = argv[2]
+            value = argv[3]
+
+            releases = engine.releases.keys - ['test-stub','test-diff','test-nightly-2018-02-08','5.1.0-2','5.1.0-1','5.1.0-0','4.2.0-0','5.1.0-RC1','5.1.0-Beta','4.2.0-RC1','4.2.0-Beta2']
+            matches = releases.select{ |release| puts "true" if engine.releases[release].components[component].version?; engine.releases[release].components[component][attribute] == value}
+            if options['show_all']
+              output = matches
+            else
+              delete = ['unstable']
+              matches.each{ |match| delete.push(match) if match =~ /nightly-/ }
+              output = matches - delete
+            end
+            puts output
+
           when 'view'
             options = defaults(argv) do |opts,options|
               opts.banner = 'Usage: simp-metadata component view <component> [attribute]'

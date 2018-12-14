@@ -76,7 +76,11 @@ module Simp
         else
           urlspec = component.primary
         end
-        fetch_from_url(urlspec, retval['path'], component, options)
+        if component.method == 'file'
+          FileUtils.cp_r component.url, directory_name
+        else
+          fetch_from_url(urlspec, retval['path'], component, options)
+        end
       else
         raise "component.class=#{component.class}, #{component.class} is not in ['String', 'Simp::Metadata::Component']"
       end
