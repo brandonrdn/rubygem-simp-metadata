@@ -64,3 +64,50 @@ begin
   end
 rescue LoadError
 end
+task :update_version, [:version] do |task, args|
+  require 'erb'
+  gem_version = args[:version]
+  renderer = ERB.new(File.read('lib/simp/metadata/version.erb'))
+  res = renderer.result(binding)
+  File.open("lib/simp/metadata/version.rb", "w+") do |f|
+    f.write(res)
+  end
+end
+
+task :prerelease, [:version] do |task, args|
+  Rake::Task["update_version"].invoke(args[:version])
+end
+
+namespace :release do
+  desc "Build a Release"
+	task :build, [:version] do |task, args|
+    branch=`git rev-parse --abbrev-ref HEAD`.chomp
+    version = args[:version]
+    if (branch != "develop")
+      puts "CRITICAL: releases must be made off of develop"
+    else
+      puts `git fetch origin`
+      messagelog = []
+      messagelog << "Release #{version}"
+      messagelog << ""
+      `git log --pretty="%s" origin/master...develop`.gsub("'", "\"").chomp.split("\n").each { |l| messagelog << l }
+      releasemessage = messagelog.join("\n")
+      puts `git pull origin`
+      puts `git checkout master`
+      puts `git pull origin`
+      puts `git merge -m '#{releasemessage}' --no-ff develop`
+      Rake::Task["prerelease"].invoke(version)
+      puts `git add -A`
+      puts `git commit --amend -m '#{releasemessage}'`
+      puts `git tag -s -m 'Release #{version}' #{version}`
+      puts `git checkout develop`
+      puts `git merge master`
+    end
+	end
+  task :push do
+    puts `git push origin --tags`
+    puts `git push origin develop:develop`
+    puts `git push origin master:master`
+  end
+end
+
