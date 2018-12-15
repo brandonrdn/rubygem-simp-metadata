@@ -5,6 +5,7 @@ module Simp
       attr_accessor :release_version
       attr_accessor :engine
       attr_accessor :version
+      attr_accessor :metadata_version
 
       def initialize(engine, version, platform)
         @engine = engine

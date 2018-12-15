@@ -5,6 +5,7 @@ module Simp
       attr_accessor :engine
       attr_accessor :version
       attr_accessor :type
+      attr_accessor :metadata_version
 
       def initialize(engine, version = nil)
         @engine = engine

@@ -57,6 +57,9 @@ module Simp
             opts.on('-p', '--os_version [os_version]', 'el_version to use', 'valid os_versions:', ' - el6', ' - el7') do |opt|
               options['os_version'] = opt
             end
+            opts.on('-m', '--metadata_version [version]', 'metadata version to use', 'valid versions:', '  -v1', '  -v2') do |metadata_version|
+              options['metadata_version'] = metadata_version
+            end
             yield(opts,options) if block_given?
           end
           option_parser.parse!(argv)
