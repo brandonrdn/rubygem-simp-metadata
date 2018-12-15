@@ -21,13 +21,13 @@ module Simp
               opts.on('-b', '--build_version', 'Specify which EL version you want to build on (6 or 7). If set, will only build from this version of base ISOs') do |build_version|
                 options['build_version'] = build_version
               end
-              opts.on('-T', '--tar_cache [folder]', 'Folder to cache tarballs during build (pre-existing tarballs will be used in the build') do |tar_cache|
+              opts.on('-T', '--tar_cache [folder]', 'Folder of tarballs to use during build (defaults to : ./tarballs') do |tar_cache|
                 options['tar_cache'] = tar_cache
               end
-              opts.on('-R', '--rpm_cache [folder]', 'Folder to cache RPMs during build (pre-existing RPMs will be used in the build') do |rpm_cache|
+              opts.on('-R', '--rpm_cache [folder]', 'Folder of RPMs to use during build (defaults to: ./rpms') do |rpm_cache|
                 options['rpm_cache'] = rpm_cache
               end
-              opts.on('-I', '--iso_cache [folder]', 'Folder to cache ISOs during the build (build ISOs should be placed here)') do |iso_cache|
+              opts.on('-I', '--iso_cache [folder]', 'Folder of base ISOs to use for the build (defaults to: ./iso)') do |iso_cache|
                 options['iso_cache'] = iso_cache
               end
               opts.on('-B', '--build_iso [iso]', 'Specify ISO to use for build (Default: Build all available ISOs in iso_cache') do |build_iso|

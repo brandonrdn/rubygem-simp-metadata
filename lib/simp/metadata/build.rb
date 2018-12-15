@@ -121,18 +121,31 @@ module Simp
           if options['build_dir']
             @build_dir = options['build_dir']
           else
-            @build_dir = "#{@currentdir}/build"
+            @build_dir = "#{currentdir}/build"
           end
         end
         @build_dir
       end
 
+      def output_dirs
+        output = []
+        %w(isos rpms tarballs built_rpms packages).each {|dir| output.push("#{build_dir}/#{dir}")}
+        output
+      end
+
       def rpm_cache
         if options['rpm_cache']
-          options['rpm_cache']
+          path = options['rpm_cache']
+          if path =~ /^\.\/.+$/
+            add_path = path.split('./')[-1]
+            rpm_cache = "#{currentdir}/#{add_path}"
+          else
+            rpm_cache = options['rpm_cache']
+          end
         else
-          "#{build_dir}/RPMs"
+          rpm_cache = "#{currentdir}/rpms"
         end
+        rpm_cache
       end
 
       def iso_cache
@@ -140,27 +153,46 @@ module Simp
           path = options['iso_cache']
           if path =~ /^\.\/.+$/
             add_path = path.split('./')[-1]
-            iso_cache = "#{@currentdir}/#{add_path}"
+            iso_cache = "#{currentdir}/#{add_path}"
           else
             iso_cache = options['iso_cache']
           end
         else
-          iso_cache = "#{build_dir}/ISOs"
+          iso_cache = "#{currentdir}/ISO"
         end
         iso_cache
       end
 
       def tar_cache
         if options['tar_cache']
-          options['tar_cache']
+          path = options['tar_cache']
+          if path =~ /^\.\/.+$/
+            add_path = path.split('./')[-1]
+            tar_cache = "#{currentdir}/#{add_path}"
+          else
+            tar_cache = options['tar_cache']
+          end
         else
-          "#{build_dir}/tarballs"
+          tar_cache = "#{currentdir}/tarballs"
         end
+        tar_cache
+      end
+
+      def build_iso_dir
+        "#{build_dir}/isos"
+      end
+
+      def build_tarball_dir
+        "#{build_dir}/tarballs"
+      end
+
+      def build_rpm_dir
+        "#{build_dir}/rpms"
       end
 
       def create_build_dirs
         FileUtils.makedirs(build_dir)
-        [tar_cache, iso_cache, rpm_cache, "#{build_dir}/built_rpms", "#{build_dir}/packages"].each {|dir| FileUtils.makedirs(dir)}
+        output_dirs.each {|dir| FileUtils.makedirs(dir)}
       end
 
       def edition
@@ -204,7 +236,6 @@ module Simp
       end
 
       def build_purge
-        build_dirs = [rpm_cache, tar_cache, iso_cache, build_dir]
         build_dirs.each do |folder|
           FileUtils.remove folder, :force => true
         end
@@ -235,7 +266,6 @@ module Simp
       end
 
       def get_rpm(component, dir = nil)
-        require 'pry'; require 'pry-byebug'; binding.pry if component.name == 'rubygem-simp-cli'
         build_types = ['puppet-module', 'rubygem']
         rpm_name = component.rpm_name
         arch = component.target
@@ -255,10 +285,9 @@ module Simp
       end
 
       def component_tarball_build
-
         # Attempt to Download
-        download(tar_cache, build_assets_repo, component_tarball_name)
-        return if File.exist?("#{tar_cache}/#{component_tarball_name}")
+        download(build_tarball_dir, build_assets_repo, component_tarball_name)
+        return if File.exist?("#{build_tarball_dir}/#{component_tarball_name}")
 
         stage_header("Creating #{component_tarball_name}")
 
@@ -272,56 +301,43 @@ module Simp
           end
 
           # Create Tarball
-          system("tar -cvzf #{tar_cache}/#{component_tarball_name}")
-
-          # Transfer RPMs if needed
-          if preserve
-            rpms = Dir.glob(File.join("**", "*.rpm"))
-            rpms.each {|rpm| FileUtils.move rpm, rpm_cache}
-          end
+          system("tar -cvzf #{build_tarball_dir}/#{component_tarball_name}")
         end
-
-        # Purge build dirs unless preserving
-        build_purge unless preserve
       end
 
       def built_rpm_tarball_build
         Dir.chdir("#{build_dir}/built_rpms") do
-          Simp::Metadata.run("tar -cvzf #{build_dir}/Tarballs/#{built_rpm_tarball_name} ./")
+          Simp::Metadata.run("tar -cvzf #{build_tarball_dir}/#{built_rpm_tarball_name} ./")
         end
       end
 
       def package_tarball_build
         Dir.chdir("#{build_dir}/packages") do
-          Simp::Metadata.run("tar -cvzf #{build_dir}/Tarballs/#{package_tarball_name} ./")
+          Simp::Metadata.run("tar -cvzf #{build_tarball_dir}/#{package_tarball_name} ./")
         end
       end
 
       def build_tarball_build
         # Attempt to Download
-        download(tar_cache, build_assets_repo, component_tarball_name)
-        return if File.exist?("#{tar_cache}/#{component_tarball_name}")
+        download(build_tarball_dir, build_assets_repo, component_tarball_name)
+        return if File.exist?("#{build_tarball_dir}/#{component_tarball_name}")
         ##### ADD Way To Build From SOURCE!
       end
 
       def overlay_tarball_build
-        if options['overlay_tarball']
-          abort(Simp::Metadata.critical("Overlay Tarball not found in #{tar_cache}. Options: Update the Tarball path with `--tar_cache`, add the tarball to this folder, or remove the `--overlay_tarball` option")[0]) unless File.exist?("#{tar_cache}/#{overlay_tarball_name}")
-        else
-          download(tar_cache, tar_yum_repo, overlay_tarball_name)
-          return if File.exist?("#{tar_cache}/#{overlay_tarball_name}")
-          component_tarball_build unless File.exist?("#{tar_cache}/#{component_tarball_name}")
-          build_tarball_build unless File.exist?("#{tar_cache}/#{build_tarball_name}")
-          Dir.mktmpdir do |dir|
-            Dir.chdir(dir)
-            FileUtils.cp "#{tar_cache}/#{build_tarball_name}", dir
-            FileUtils.cp "#{tar_cache}/#{component_tarball_build}", dir
-            system("tar xvf *.tar.gz ./")
-            FileUtils.remove("#{dir}/*.tar.gz")
-            system("tar -cvzf #{tar_cache}/#{overlay_tarball_name} #{dir}")
-          end
-          abort(Simp::Metadata.critical("Failed to create Overlay Tarball #{overlay_tarball_name}")[0]) unless File.exist?("#{tar_cache}/#{overlay_tarball_name}")
+        download(build_tarball_dir, tar_yum_repo, overlay_tarball_name)
+        return if File.exist?("#{build_tarball_dir}/#{overlay_tarball_name}")
+        component_tarball_build unless File.exist?("#{build_tarball_dir}/#{component_tarball_name}")
+        build_tarball_build unless File.exist?("#{build_tarball_dir}/#{build_tarball_name}")
+        Dir.mktmpdir do |dir|
+          Dir.chdir(dir)
+          FileUtils.cp "#{build_tarball_dir}/#{build_tarball_name}", dir
+          FileUtils.cp "#{build_tarball_dir}/#{component_tarball_build}", dir
+          system("tar xvf *.tar.gz ./")
+          FileUtils.remove("#{dir}/*.tar.gz")
+          system("tar -cvzf #{build_tarball_dir}/#{overlay_tarball_name} #{dir}")
         end
+        abort(Simp::Metadata.critical("Failed to create Overlay Tarball #{overlay_tarball_name}")[0]) unless File.exist?("#{build_tarball_dir}/#{overlay_tarball_name}")
       end
 
       def platforms
@@ -455,7 +471,7 @@ mkisofs
 -m TRANS.TBL
 -x ./lost+found
 -o #{iso_name}
-        #{extract_dir}
+#{extract_dir}
         HEREDOC
         heredoc.tr("\n", ' ')
       end
@@ -609,7 +625,7 @@ protect=1
             next if el_version != build_version
           end
 
-          if File.exist?("#{iso_cache}/#{iso_name}")
+          if File.exist?("#{build_iso_dir}/#{iso_name}")
             stage_header("SIMP ISO #{iso_name} already exists! Not building for existing ISO")
             next
           end
@@ -618,7 +634,7 @@ protect=1
 
           # Create Build Directories
           create_build_dirs
-          
+
           # Create tempdir
           FileUtils.makedirs(extract_dir)
           Dir.chdir(extract_dir) do
@@ -646,8 +662,17 @@ protect=1
 
             # Add Overlay tarball
             stage_header("Adding SIMP Overlay Tarball")
-            overlay_tarball_build
-            `tar -xvf #{tar_cache}/#{overlay_tarball_name}`
+            if options['overlay_tarball']
+              if File.exist?("#{tar_cache}/#{overlay_tarball_name}")
+                `tar -xvf "#{tar_cache}/#{overlay_tarball_name}"`
+              else
+                overlay_tarball_build
+                `tar -xvf #{build_tarball_dir}/#{overlay_tarball_name}`
+              end
+            else
+              overlay_tarball_build
+              `tar -xvf #{build_tarball_dir}/#{overlay_tarball_name}`
+            end
 
             # Add Build tarball
             stage_header('Adding SIMP Build Tarball')
@@ -710,6 +735,15 @@ protect=1
               end
             end
 
+            if preserve
+              dirs.each do |dir|
+                path = dir.split("#{extract_dir}/")[-1]
+                FileUtils.makedirs("#{build_rpm_dir}/#{path}")
+                rpms = Dir.glob(File.join(dir, '*.rpm'))
+                rpms.each {|rpm| FileUtils.copy rpm, "#{build_rpm_dir}/#{path}"}
+              end
+            end
+
             # Repoclosure
             stage_header("Verifying dependencies")
             repoclosure(extract_dir)
@@ -725,13 +759,21 @@ protect=1
 
             # Create ISO
             stage_header("Creating #{iso_name}")
-            Dir.chdir(iso_cache) do
+            Dir.chdir(build_iso_dir) do
               %x(#{iso_build_command})
             end
             stage_header("Finished building #{iso_name}")
           end
-          FileUtils.makedirs "#{build_dir}/../#{platform}"
-          FileUtils.move build_dir, "#{build_dir}/../#{platform}"
+
+          # Move necessary files to final directory
+          FileUtils.makedirs "#{currentdir}#{platform}"
+          if preserve
+            FileUtils.remove "#{extract_dir}"
+            FileUtils.move build_dir, "#{currentdir}/#{platform}"
+          else
+            FileUtils.move Dir.glob(File.join(build_iso_dir, '*.iso')), "#{currentdir}/#{platform}"
+            FileUtils.remove "#{build_dir}"
+          end
         end
         stage_header("Finished Build Process")
       end

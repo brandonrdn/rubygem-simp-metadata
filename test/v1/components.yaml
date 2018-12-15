@@ -1,0 +1,85 @@
+---
+components:
+  simp-vendored-ruby-rpm:
+    component-type: asset
+    authoritative: false
+    asset_name: simp-vendored-ruby
+    extension: rpm
+    locations:
+    - url: simp://simp-vendored-ruby-rpm
+      type: binary
+      method: file
+      primary: true
+  jaeger:
+    component-type: rubygem
+    authoritative: true
+    locations:
+    - url: git@gitlab.onyxpoint.com:commercial/simp-enterprise/jaeger
+      type: binary
+      method: file
+      extract: true
+      primary: true
+    - url: https://gitlab.onyxpoint.com/commercial/simp-enterprise/jaeger
+  jaeger-plugin-crimson:
+    component-type: rubygem
+    authoritative: true
+    locations:
+    - url: git@gitlab.onyxpoint.com:commercial/simp-enterprise/jaeger-plugin-crimson
+      type: binary
+      method: file
+      extract: true
+      primary: true
+    - url: https://gitlab.onyxpoint.com/commercial/simp-enterprise/jaeger-plugin-crimson
+  jaeger-plugin-ldap:
+    component-type: rubygem
+    authoritative: true
+    locations:
+    - url: git@gitlab.onyxpoint.com:commercial/simp-enterprise/jaeger-plugin-ldap
+      type: binary
+      method: file
+      extract: true
+      primary: true
+    - url: https://gitlab.onyxpoint.com/commercial/simp-enterprise/jaeger-plugin-ldap
+  jaeger-plugin-google-auth:
+    component-type: rubygem
+    authoritative: true
+    locations:
+    - url: git@gitlab.onyxpoint.com:commercial/simp-enterprise/jaeger-plugin-google-auth
+      type: binary
+      method: file
+      extract: true
+      primary: true
+    - url: https://gitlab.onyxpoint.com/commercial/simp-enterprise/jaeger-plugin-google-auth
+  pupmod-simp-compliance_markup:
+    component-type: rubygem
+    authoritative: true
+    # ref: ui-master
+    locations:
+    - url: git@gitlab.onyxpoint.com:commercial/simp-enterprise/pupmod-simp-compliance_markup
+      type: binary
+      method: file
+      extract: true
+      primary: true
+    - url: https://gitlab.onyxpoint.com/commercial/simp-enterprise/pupmod-simp-compliance_markup
+  simp_windows:
+    component-type: puppet-module
+    authoritative: true
+    # ref: ui_demo
+    locations:
+    - url: git@gitlab.onyxpoint.com:commercial/simp-enterprise/simp_windows
+      type: binary
+      method: file
+      extract: true
+      primary: true
+    - url: https://gitlab.onyxpoint.com/commercial/simp-enterprise/simp_windows
+  simple_data_profiles:
+    component-type: puppet-module
+    authoritative: true
+    # ref: master
+    locations:
+    - url: git@gitlab.onyxpoint.com:commercial/simp-enterprise/simple_data_profiles
+      type: binary
+      method: file
+      extract: true
+      primary: true
+    - url: https://gitlab.onyxpoint.com/commercial/simp-enterprise/simple_data_profiles
