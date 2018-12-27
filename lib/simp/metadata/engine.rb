@@ -20,12 +20,19 @@ module Simp
         bootstrap_source = Simp::Metadata::Bootstrap_source.new(edition)
         if metadatarepos.class.to_s == 'Hash'
           metadatarepos.each do |reponame, url|
+            if url.match?(/https?:/)
+              method = 'git'
+              extract = false
+            else
+              method = 'file'
+              extract = true
+            end
             # XXX: ToDo replace with better logic once Simp::Metadata.download_component gets refactored.
             # MUCH LAYERING VIOLATIONS
             next unless bootstrap_source.components.key?(reponame)
             bootstrap_source.components[reponame]['locations'][0]['url'] = url
-            bootstrap_source.components[reponame]['locations'][0]['method'] = 'git'
-            bootstrap_source.components[reponame]['locations'][0]['extract'] = false
+            bootstrap_source.components[reponame]['locations'][0]['method'] = method
+            bootstrap_source.components[reponame]['locations'][0]['extract'] = extract
           end
         end
         @sources[bootstrap_source.name] = bootstrap_source
