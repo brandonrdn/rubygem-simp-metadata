@@ -20,7 +20,7 @@ module Simp
         bootstrap_source = Simp::Metadata::Bootstrap_source.new(edition)
         if metadatarepos.class.to_s == 'Hash'
           metadatarepos.each do |reponame, url|
-            url_matches = [/https?:/,/git@gitlab.onyxpoint.com:/]
+            url_matches = [/https?:/,/git@/]
             if url.match?(Regexp.union(url_matches))
               method = 'git'
               extract = false
