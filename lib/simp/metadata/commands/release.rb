@@ -20,7 +20,13 @@ module Simp
             end
             engine, root = get_engine(engine, options)
             puts engine.releases[options['release']].components.keys.join("\n")
+
           when 'platforms'
+            options = defaults(argv) do |opts, options|
+              opts.banner = 'Usage: simp-metadata release <release_name> platforms'
+              opts.banner += "\n-Outputs valid platforms for specified release."
+            end
+            engine, root = get_engine(engine, options)
             if options['metadata_version'] == 'v1'
               Simp::Metadata.critical('Platform data is not available for metadata version 1')
             else
