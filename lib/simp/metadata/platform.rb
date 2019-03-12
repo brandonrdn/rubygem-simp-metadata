@@ -40,7 +40,7 @@ module Simp
       end
 
       def keys
-        %w(images)
+        images
       end
 
       def [](index)

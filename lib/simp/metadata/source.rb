@@ -17,6 +17,7 @@ module Simp
       attr_accessor :engine
       attr_accessor :isos
       attr_accessor :platforms
+      attr_accessor :puppet_versions
       attr_accessor :metadata_version
 
       def initialize(args)
@@ -185,6 +186,7 @@ module Simp
         @components = @data['components'] unless @data['components'].nil?
         @isos = @data['isos'] unless @data['isos'].nil?
         @platforms = @data['platforms'] unless @data['platforms'].nil?
+        @puppet_versions = @data['puppet_versions'] unless @data['puppet_versions'].nil?
       end
 
       def deep_merge(target_hash, source_hash)

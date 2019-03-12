@@ -27,6 +27,7 @@ require 'simp/metadata/package'
 require 'simp/metadata/packages'
 require 'simp/metadata/iso'
 require 'simp/metadata/isos'
+require 'simp/metadata/puppet_versions'
 
 module Simp
   module Metadata

@@ -22,6 +22,10 @@ module Simp
         Simp::Metadata::Platforms.new(engine, version)
       end
 
+      def puppet_versions
+        Simp::Metadata::Puppet_versions.new(engine, version)
+      end
+
       def isos
         Simp::Metadata::Isos.new(engine, version)
       end

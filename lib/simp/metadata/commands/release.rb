@@ -33,6 +33,18 @@ module Simp
               puts engine.releases[options['release']].platforms.keys.join("\n")
             end
 
+          when 'puppet_versions'
+            options = defaults(argv) do |opts, options|
+              opts.banner = 'Usage: simp-metadata puppet_release <release_name> puppet_versions'
+              opts.banner += "\n-Outputs Puppet versions for specified release."
+            end
+            engine, root = get_engine(engine, options)
+            if options['metadata_version'] == 'v1'
+              Simp::Metadata.critical('Puppet versions are not available for metadata version 1')
+            else
+              puts engine.releases[options['release']].puppet_versions.output
+            end
+
           when 'isos'
             options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata release <release_name> isos'
