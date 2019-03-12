@@ -59,6 +59,34 @@ module Simp
               exit 6
             end
 
+          when 'add'
+            options = defaults(argv) do |opts, options|
+              opts.banner = 'Usage: simp-metadata component create <component> <setting> <value>'
+              opts.on('--ref [ref]', 'ref to add to component') do |ref|
+                options['ref'] = ref
+              end
+              opts.on('--tag [tag]', 'tag to add to component') do |tag|
+                options['tag'] = tag
+              end
+            end
+            engine, root = get_engine(engine, options)
+            component = argv[1]
+            settings = {}
+            settings['tag'] = options['tag'] if options['tag']
+            settings['ref'] = options['ref'] if options['ref']
+            puts "="*80
+            puts settings
+            puts "="*80
+            require 'pry';require 'pry-byebug';binding.pry
+            begin
+              engine.writable_source.releases[options['release']].components[component] = settings
+              engine.writable_source.dirty = true
+            rescue
+              Simp::Metadata.critical("Unable to create #{component} for #{options['release']} release")
+              exit 6
+            end
+            puts "="*80
+
           when 'find_release'
             options = defaults(argv) do |opts, options|
               opts.banner = "Usage: simp-metadata component find_release <component> <attribute> <value>\n"

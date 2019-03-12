@@ -428,6 +428,21 @@ module Simp
         view_hash
       end
 
+      def create(component, settings={'ref' => nil})
+
+        begin
+          engine.sources.each do |_name, metadata_source|
+            if metadata_source.writable?
+              engine.metadata_source.
+            end
+            releases[options['release']].components[component] = settings
+          end
+        rescue
+          Simp::Metadata.critical("Unable to create #{component} for #{options['release']} release")
+          exit 6
+        end
+      end
+
       def diff(component, attribute)
         diff = {}
 

@@ -14,7 +14,7 @@ module Simp
             component = argv[0]
             setting = argv[1]
             value = argv[2]
-
+require 'pry'; require 'pry-byebug'; binding.pry
             if options['release'].nil?
               object = engine.components[component]
             else
