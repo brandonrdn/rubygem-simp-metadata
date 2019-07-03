@@ -64,6 +64,14 @@ module Simp
           engine.writable_source.dirty = true
         end
       end
+
+      def add_release_component(name, settings = {}, release)
+        unless engine.releases[release].components.key?(name)
+          engine.writable_source.releases[release][name] = settings
+          engine.writable_source.dirty = true
+        end
+      end
+
     end
   end
 end

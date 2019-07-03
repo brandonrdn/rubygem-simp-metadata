@@ -47,13 +47,41 @@ module Simp
             component = argv[1]
             setting = argv[2]
             value = argv[3]
-            object = engine.components[component]
+            release = options['release']
+            object = if release
+                       engine.releases[release].components[component]
+                     else
+                       engine.components[component]
+                     end
+
+            # Fail if SIMP version isn't invalid
+            if release && !engine.releases.keys.include?(release)
+              Simp::Metadata.critical("Unable to update: Input: #{release} isn't a valid SIMP Release Version.")
+              exit 5
+            end
+
+            # Make sure setting is valid
             unless object.methods.include?(setting.to_sym)
               Simp::Metadata.critical("#{setting} is not a valid setting")
               exit 7
             end
+
+            # Check if component exists in default component.yaml
+            components = engine.components
+            unless components.key?(component)
+              Simp::Metadata.critical("#{component} does not exist in components.yaml.")
+              exit 8
+            end
+
+            # Update component
+            release_components = engine.releases[release].components
             begin
-              object.send("#{setting}=".to_sym, value)
+              if release_components.key?(component)
+                object.send("#{setting}=".to_sym, value)
+              else
+                setting_hash = {"#{setting}" => value}
+                engine.releases[release].components.add_release_component(component.to_s, setting_hash, options['release'])
+              end
             rescue NoMethodError => ex
               Simp::Metadata.critical("#{setting} is a read-only setting")
               exit 6
