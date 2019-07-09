@@ -61,7 +61,7 @@ module Simp
 
           when 'add'
             options = defaults(argv) do |opts, options|
-              opts.banner = 'Usage: simp-metadata component create <component> <setting> <value>'
+              opts.banner = 'Usage: simp-metadata component add <component> <setting> <value>'
               opts.on('--ref [ref]', 'ref to add to component') do |ref|
                 options['ref'] = ref
               end

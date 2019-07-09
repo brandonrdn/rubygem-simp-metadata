@@ -45,7 +45,7 @@ module Simp
         else
           engine.sources.each do |_name, source|
             if source.releases.key?(version)
-              source.releases[version]['components'].each do |component, _data|
+              source.releases[version].each do |component, _data|
                 result[component] = true
               end
             else

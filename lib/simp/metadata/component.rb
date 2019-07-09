@@ -48,7 +48,7 @@ module Simp
         retval = engine.sources['bootstrap_metadata']
         engine.sources.each do |_name, source|
           if source.releases.key?(release_version)
-            if source.releases[release_version]['components'].key?(name)
+            if source.releases[release_version].key?(name)
               retval = source
               break
             end
@@ -85,8 +85,8 @@ module Simp
       def get_from_release
         retval = {}
         if release_source.releases.key?(release_version)
-          if release_source.releases[release_version]['components'].key?(name)
-            retval = release_source.releases[release_version]['components'][name]
+          if release_source.releases[release_version].key?(name)
+            retval = release_source.releases[release_version][name]
           end
         else
           if release_source.release(release_version).key?(name)
@@ -433,15 +433,17 @@ module Simp
         begin
           engine.sources.each do |_name, metadata_source|
             if metadata_source.writable?
-              engine.metadata_source.
+              engine.metadata_source
+            else
+              releases[options['release']].components[component] = settings
             end
-            releases[options['release']].components[component] = settings
+            end
+          rescue
+            Simp::Metadata.critical("Unable to create #{component} for #{options['release']} release")
+            exit 6
           end
-        rescue
-          Simp::Metadata.critical("Unable to create #{component} for #{options['release']} release")
-          exit 6
         end
-      end
+
 
       def diff(component, attribute)
         diff = {}
