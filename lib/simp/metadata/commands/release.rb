@@ -10,7 +10,7 @@ module Simp
 
           when '--help', '-h'
             options = defaults(argv) do |opts, options|
-              opts.banner = 'Usage: simp-metadata release [ components | diff ]'
+              opts.banner = 'Usage: simp-metadata release [ components | diff | add_component | delete_component | platforms | puppet_versions | isos | puppetfile ]'
             end
 
           when 'components'
@@ -20,6 +20,50 @@ module Simp
             end
             engine, root = get_engine(engine, options)
             puts engine.releases[options['release']].components.keys.join("\n")
+
+          when 'component'
+            sub_subcommand = argv[1]
+            case sub_subcommand
+            when 'add'
+              puts "HERE"
+
+              options = defaults(argv) do |opts, options|
+              opts.banner = 'Usage: simp-metadata release component add <-v release> <component_name> setting=value(can be multiple'
+              opts.banner << '    Adds a SIMP component for a specific release'
+              opts.banner << '      - Must include at least one setting (ref, tag, or branch)'
+            end
+            engine, root = get_engine(engine, options)
+            release = options['release']
+            _command, _subcommand, component, *input = argv
+            hash = {}
+            input.each do |settings|
+              setting = settings.split('=')[0]
+              value = settings.split('=')[-1]
+              hash[setting] = value
+            end
+            new_data = {}
+            ['ref','tag','branch'].each {|key| new_data[key] = hash[key] if hash[key]}
+            abort(Simp::Metadata.critical("Must include at least one setting in a hash. i.e. {'tag' => '1.2.3'}")[0]) unless argv[2]
+            abort(Simp::Metadata.critical("Must specify Release from which to remove component")[0]) unless options['release']
+            engine.releases[release].add_component(component, new_data)
+
+          when 'delete'
+            options = defaults(argv) do |opts, options|
+              opts.banner = 'Usage: simp-metadata release component delete <-v release> <component_name>'
+              opts.banner << '    Removes a SIMP component from a specific release'
+            end
+            engine, root = get_engine(engine, options)
+            release = options['release']
+            component = argv[2]
+            abort(Simp::Metadata.critical("Must specify Release from which to remove component")[0]) unless options['release']
+            engine.releases[release].delete_component(component)
+          else
+            options = defaults(argv) do |opts, options|
+              opts.banner = 'Usage: simp-metadata release component [ add | delete ]'
+              opts.banner << '    Add or delete component for the specified release.'
+            end
+          abort(Simp::Metadata.critical("Invalid subcommand: `simp-metadata release component` expects 'add' or 'delete'`")[0])
+          end
 
           when 'platforms'
             options = defaults(argv) do |opts, options|
@@ -96,6 +140,7 @@ module Simp
             end
           end
 
+          engine.save((['simp-metadata', 'release'] + argv).join(' ')) if root
         rescue RuntimeError => e
           Simp::Metadata.critical(e.message)
           exit 5

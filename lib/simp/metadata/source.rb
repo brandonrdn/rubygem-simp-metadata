@@ -15,10 +15,6 @@ module Simp
       attr_accessor :name
       attr_accessor :edition
       attr_accessor :engine
-      attr_accessor :isos
-      attr_accessor :platforms
-      attr_accessor :puppet_versions
-      attr_accessor :metadata_version
 
       def initialize(args)
         unless args.key?(:engine)
@@ -48,9 +44,7 @@ module Simp
         cachepath = args[:cachepath]
         @components = {}
         @releases = {}
-        @isos = {}
         @data = {}
-        @metadata_version = args[:engine].options['metadata_version']
         @cleanup = []
 
         if cachepath.nil?
@@ -121,9 +115,9 @@ module Simp
           puts @load_path
           # XXX ToDo: Write files to yaml, commit and push (where appropriate)
 
-          Simp::Metadata.run("cd #{@load_path} && rm -rf #{@metadata_version}")
-          FileUtils.mkdir_p("#{@load_path}/#{@metadata_version}")
-          File.open("#{@load_path}/#{@metadata_version}/components.yaml", 'w') { |file| file.write({'components' => @components}.to_yaml) }
+          Simp::Metadata.run("cd #{@load_path} && rm -rf v1")
+          FileUtils.mkdir_p("#{@load_path}/v1")
+          File.open("#{@load_path}/v1/components.yaml", 'w') { |file| file.write({ 'components' => @components }.to_yaml) }
           @releases.each do |releasename, data|
             directory = case releasename
                         when /.*-[Aa][Ll][Pp][Hh][Aa].*/
@@ -145,8 +139,8 @@ module Simp
                         else
                           'releases'
                         end
-            FileUtils.mkdir_p("#{@load_path}/#{@metadata_version}/#{directory}")
-            File.open("#{@load_path}/#{@metadata_version}/#{directory}/#{releasename}.yaml", 'w') { |file| file.write({'releases' => {releasename.to_s => data}}.to_yaml) }
+            FileUtils.mkdir_p("#{@load_path}/v1/#{directory}")
+            File.open("#{@load_path}/v1/#{directory}/#{releasename}.yaml", 'w') { |file| file.write({ 'releases' => { releasename.to_s => data } }.to_yaml) }
           end
           Simp::Metadata.run("cd #{@load_path} && git remote add upstream #{write_url}")
           Simp::Metadata.run("cd #{@load_path} && git remote set-url upstream #{write_url}")
@@ -164,29 +158,15 @@ module Simp
       def load_from_dir(path)
         @load_path = path
         Dir.chdir(path) do
-          Dir.glob("**/#{@metadata_version}/**/*.yaml") do |filename|
+          Dir.glob('v1/**/*.yaml') do |filename|
             begin
               hash = YAML.load_file(filename)
               @data = deep_merge(@data, hash)
             end
           end
         end
-        @releases = if @metadata_version == 'v1'
-                      unless @data['releases'].nil?
-                        output = {}
-                        @data['releases'].each do |release,data|
-                          hash = {'components' => data}
-                          output[release] = hash
-                        end
-                        output
-                      end
-                    else
-                      @data['releases'] unless @data['releases'].nil?
-                    end
+        @releases = @data['releases'] unless @data['releases'].nil?
         @components = @data['components'] unless @data['components'].nil?
-        @isos = @data['isos'] unless @data['isos'].nil?
-        @platforms = @data['platforms'] unless @data['platforms'].nil?
-        @puppet_versions = @data['puppet_versions'] unless @data['puppet_versions'].nil?
       end
 
       def deep_merge(target_hash, source_hash)

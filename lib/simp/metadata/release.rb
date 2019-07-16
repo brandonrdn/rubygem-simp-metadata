@@ -116,6 +116,21 @@ module Simp
         end
         diff
       end
+
+      def add_component(component,hash)
+        abort(Simp::Metadata.critical("#{component} is not a valid SIMP Component. Please use `simp-metadata component add` if this is a valid component")[0]) unless engine.components.key?(component)
+        abort(Simp::Metadata.critical("#{component} is already part of SIMP #{version}")[0]) if components.key?(component)
+        engine.writable_source.releases[version][component] = hash
+        engine.writable_source.dirty = true
+      end
+
+      def delete_component(component)
+        if components.key?(component)
+          engine.writable_source.releases[version].delete(component)
+          engine.writable_source.dirty = true
+        end
+      end
+
     end
   end
 end

@@ -54,7 +54,7 @@ module Simp
               opts.banner << "     component: Builds a tarball of release components with the SIMP/noarch structure\n"
               opts.banner << "     build: Creates a tarball of build files\n"
               opts.banner << "     overlay: Builds the entire overlay tarball(default)\n\n"
-              opts.on('-d', '--distribution [distro]', 'Distribution to use: CentOS, RedHat') do |distro|
+              opts.on('-D', '--distribution [distro]', 'Distribution to use: CentOS, RedHat') do |distro|
                 options['distribution'] = distro
               end
               options['build_dir'] = Dir.pwd
@@ -86,6 +86,35 @@ module Simp
                      tarball_type
                    end
             simp_build.build('tarball', type)
+          when 'components'
+            options = defaults(argv) do |opts, options|
+              opts.banner = "Usage: simp-metadata build components [-v <release>] [-p <el6|el7>] [-d <os_family>]\n\n"
+              opts.on('-D', '--distribution [distro]', 'Distribution to use: CentOS, RedHat') do |distro|
+                options['distribution'] = distro
+              end
+              opts.on('-a', '--all', 'Ignores existing RPMs, creates all RPMs') do |all|
+                options['all'] = all
+              end
+              opts.on('-b', '--build_dir [folder]', 'Directory to build in (Default: ./build') do |build_dir|
+                options['build_dir'] = build_dir
+              end
+            end
+            engine, root = get_engine(engine, options)
+            release = options['release']
+            abort(Simp::Metadata.critical("No release specified")[0]) unless release
+            components = engine.releases[release].components
+            components.each do |component|
+              data = engine.releases[release].components[component]
+              if options['all']
+                data.build
+              else
+                require 'pry'; require 'pry-byebug'; binding.pry
+
+                exit_code = Simp::Metadata.run("#{data.download_source}")
+                puts exit_code
+                #data.build unless exit_code == 0
+              end
+            end
           else
             abort("Cannot build #{subcommand}")
           end

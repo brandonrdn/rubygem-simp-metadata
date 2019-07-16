@@ -68,6 +68,7 @@ module Simp
           engine.writable_source.dirty = true
         end
       end
+
     end
   end
 end

@@ -62,7 +62,6 @@ module Simp
         retval
       end
 
-      #
       # Will be used to grab method based data in the future, rather
       # then calling get_from_release or get_from_component directly,
       #
@@ -224,6 +223,14 @@ module Simp
         get_from_component['authoritative']
       end
 
+      def deprecated?
+        deprecated
+      end
+
+      def deprecated
+        get_from_component['deprecated']
+      end
+
       def revision
         revision = get_from_component['revision']
         if revision.nil?
@@ -321,6 +328,7 @@ module Simp
       end
 
       def rpm_basename
+=begin
         if component_type == 'puppet-module'
           if name =~ /pupmod-*/
             name.to_s
@@ -330,6 +338,9 @@ module Simp
         else
           name.to_s
         end
+      end
+=end
+        real_asset_name
       end
 
       def component_version
@@ -485,14 +496,15 @@ module Simp
       def build(destination)
         currentdir = Dir.pwd
         destination = currentdir if destination.nil?
+        abort(Simp::Metadata.critical("Component #{name} is deprecated. Cannot build. Try downloading")[0]) if deprecated?
         abort(Simp::Metadata.critical("File #{rpm_name} already exists in #{destination}. Please delete this file and re-run the command if you wish to replace it.")[0]) if File.exist?("#{destination}/#{rpm_name}")
 
         # Create tmp dir and clone source
         Dir.mktmpdir do |dir|
           Dir.chdir(dir.to_s) do
-            system("git clone #{url} source > /dev/null")
+            Simp::Metadata.run("git clone #{url} source > /dev/null")
             Dir.chdir('source') do
-              system("git checkout #{version}")
+              Simp::Metadata.run("git checkout #{version}")
 
               # sanitize
               excludes = %w(.git .gitignore)
@@ -552,12 +564,11 @@ module Simp
             end
           end
         end
-        FileUtils.move "#{currentdir}/#{rpm_name}", destination
+        FileUtils.move "#{currentdir}/#{rpm_name}", destination unless currentdir == destination
       end
 
-      def download(destination, src, file = "#{rpm_name}")
-        destination = Dir.pwd if destination.nil?
-        return if File.exist?("#{destination}/#{file}")
+      def download_source(src = nil, file = rpm_name)
+        output = nil
         el_version = os_version.split('el')[1]
         if src
           sources = [src]
@@ -572,19 +583,36 @@ module Simp
           if source =~ /^https?:/
             file_check = `curl -sLI #{source}/#{file} | head -n 1 | awk '{print $2}'`.chomp
             if file_check == '200'
-              `wget -q -P #{destination} #{source}/#{file}`
-              #File.open("#{destination}/#{file}", "w") do |opened|
-              #HTTParty.get("#{source}/#{file}", stream_body: true) do |fragment|
-              #  opened.write(fragment)
-              #end
-              #end
+              output = source
             end
           elsif File.exist?("#{source}/#{file}")
-            FileUtils.cp "#{source}/#{file}", destination
+            output = source
           end
-          return if File.exist?("#{destination}/#{file}")
         end
+        output
       end
+
+      def download(destination, src = nil, file = rpm_name)
+        destination = Dir.pwd if destination.nil?
+        return if File.exist?("#{destination}/#{file}")
+        if download_source =~ /^https?:/
+          file_check = `curl -sLI #{download_source}/#{file} | head -n 1 | awk '{print $2}'`.chomp
+          if file_check == '200'
+            `wget -q --show-progress -P #{destination} #{download_source}/#{file}`
+            #File.open("#{destination}/#{file}", "w") do |opened|
+            #HTTParty.get("#{source}/#{file}", stream_body: true) do |fragment|
+            #  opened.write(fragment)
+            #end
+            #end
+          else
+            abort(Simp::Metadata.critical("#{rpm_name}: does not exist at source")[0])
+          end
+        elsif File.exist?("#{download_source}/#{file}")
+          FileUtils.cp "#{download_source}/#{file}", destination
+        end
+        return if File.exist?("#{destination}/#{file}")
+      end
+
     end
   end
 end

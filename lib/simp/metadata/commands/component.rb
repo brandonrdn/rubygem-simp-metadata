@@ -9,22 +9,23 @@ module Simp
           case subcommand
           when '--help', '-h'
             options = defaults(argv) do |opts, options|
-              opts.banner = 'Usage: simp-metadata component [ view | diff | download | build | update | create ]'
+              opts.banner = 'Usage: simp-metadata component [ view | diff | download | build | update | create | delete | find_release]'
             end
 
           when 'create'
             options = defaults(argv) do |opts, options|
-              opts.banner = 'Usage: simp-metadata component create <component_name> name=<value>'
+              opts.banner = 'Usage: simp-metadata component create <component_name> setting=<value>'
+              opts.banner << '    Creates a new component to be used within any Release'
             end
             engine, root = get_engine(engine, options)
-            component = argv[1]
+            component = argv[2]
             argv.shift
             data = {'locations' => [{'primary' => true}]}
             argv.each do |argument|
               splitted = argument.split('=')
-              name = splitted[0]
+              setting = splitted[0]
               value = splitted[1]
-              case name
+              case setting
               when 'authoritative'
                 data['authoritative'] = value.to_s == 'true'
               when 'format'
@@ -39,6 +40,7 @@ module Simp
             end
             engine.components.create(component, data)
 
+
           when 'update'
             options = defaults(argv) do |opts, options|
               opts.banner = 'Usage: simp-metadata component update <component> <setting> <value>'
@@ -47,51 +49,28 @@ module Simp
             component = argv[1]
             setting = argv[2]
             value = argv[3]
-            object = engine.components[component]
+            object = engine.releases[options['release']].components[component]
+            unless options['release']
+              Simp::Metadata.critical("A SIMP Release must be specified to edit components")
+              exit 9
+            end
             unless object.methods.include?(setting.to_sym)
               Simp::Metadata.critical("#{setting} is not a valid setting")
               exit 7
             end
             begin
+              require 'pry'; require 'pry-byebug'; binding.pry
               object.send("#{setting}=".to_sym, value)
             rescue NoMethodError => ex
               Simp::Metadata.critical("#{setting} is a read-only setting")
               exit 6
             end
 
-          when 'add'
-            options = defaults(argv) do |opts, options|
-              opts.banner = 'Usage: simp-metadata component add <component> <setting> <value>'
-              opts.on('--ref [ref]', 'ref to add to component') do |ref|
-                options['ref'] = ref
-              end
-              opts.on('--tag [tag]', 'tag to add to component') do |tag|
-                options['tag'] = tag
-              end
-            end
-            engine, root = get_engine(engine, options)
-            component = argv[1]
-            settings = {}
-            settings['tag'] = options['tag'] if options['tag']
-            settings['ref'] = options['ref'] if options['ref']
-            puts "="*80
-            puts settings
-            puts "="*80
-            require 'pry';require 'pry-byebug';binding.pry
-            begin
-              engine.writable_source.releases[options['release']].components[component] = settings
-              engine.writable_source.dirty = true
-            rescue
-              Simp::Metadata.critical("Unable to create #{component} for #{options['release']} release")
-              exit 6
-            end
-            puts "="*80
-
           when 'find_release'
             options = defaults(argv) do |opts, options|
               opts.banner = "Usage: simp-metadata component find_release <component> <attribute> <value>\n"
-              opts.banner << "  Output releases where specified components <attribute> matches <value>"
-              opts.on('-s', '--show-all', 'Shows all release matches, including unstable and nightlies') do |show_all|
+              opts.banner << "  Output latest release where specified value is set for component's attribute"
+              opts.on('-s', '--show_all', 'Shows all release matches, including unstable and nightlies') do |show_all|
                 options['show_all'] = show_all
               end
             end
@@ -101,13 +80,18 @@ module Simp
             value = argv[3]
 
             releases = engine.releases.keys - ['test-stub','test-diff']
-            matches = releases.select{ |release| puts "true" if engine.releases[release].components[component].version?; engine.releases[release].components[component][attribute] == value}
+            matches = []
+            releases.each do |release|
+              release_component = engine.releases[release].components[component]
+              matches.push(release) if release_component[attribute] == value
+            end
             if options['show_all']
               output = matches
             else
-              delete = ['unstable']
-              matches.each{ |match| delete.push(match) if match =~ /nightly-/ }
-              output = matches - delete
+              filter = ['unstable','development']
+              matches.each{ |match| filter.push(match) if match =~ /nightly-/ }
+              pruned = matches - filter
+              output = pruned.max
             end
             puts output
 
@@ -159,7 +143,7 @@ module Simp
             engine, root = get_engine(engine, options)
             component = argv[1]
             destination = options['destination']
-            source = options['source']
+            source = options['source'] == [] ? nil : options['source']
             if engine.components.key?(component)
               if options['release'].nil?
                 comp = engine.components[component]
@@ -183,10 +167,11 @@ module Simp
             component = argv[1]
             destination = options['destination']
             if engine.components.key?(component)
-              if options['release'].nil?
-                comp = engine.components[component]
-              else
-                comp = engine.releases[options['release']].components[component]
+              release = options['release'] ? options['release'] : 'unstable'
+              comp = engine.releases[release].components[component]
+              if comp.version == ''
+                Simp::Metadata.critical("#{component} not found in SIMP #{release}")
+                exit 11
               end
               comp.build(destination)
             else

@@ -5,7 +5,7 @@ module Simp
       class Delete < Simp::Metadata::Commands::Base
         def run(argv, engine = nil)
           options = defaults(argv) do |opts,options|
-            opts.banner = 'Usage: simp-metadata delete <component_name>'
+            opts.banner = 'Usage: simp-metadata delete <release>'
           end
 
           engine, root = get_engine(engine, options)
