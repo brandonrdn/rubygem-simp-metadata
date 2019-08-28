@@ -7,7 +7,7 @@ module Simp
 
       def initialize(component, type)
         @type = type
-        @component = component
+        @source = component
       end
 
       def keys
@@ -25,30 +25,26 @@ module Simp
       end
 
       def fetch_data
-        component.fetch_data('buildinfo')
+        source.fetch_data('buildinfo')
       end
 
       def method_defaults
-        {
-          'rpm' => {
-            'build_method' => 'simp-core'
-          }
-        }
+        { rpm: { build_method: 'simp-core' } }
       end
 
       def build_method
         buildinfo = fetch_data
         if buildinfo.nil?
-          retval = method_defaults[type]['build_method']
+          retval = method_defaults[type][:build_method]
         else
           if buildinfo.key?(type)
-            retval = if buildinfo[type].key?('build_method')
-                       buildinfo[type]['build_method']
+            retval = if buildinfo[type].key?(:build_method)
+                       buildinfo[type][:build_method]
                      else
-                       method_defaults[type]['build_method']
+                       method_defaults[type][:build_method]
                      end
           else
-            retval = method_defaults[type]['build_method']
+            retval = method_defaults[type][:build_method]
           end
         end
         retval

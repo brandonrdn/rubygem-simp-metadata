@@ -6,8 +6,10 @@ module Simp
       include Enumerable
       attr_accessor :engine
 
-      def initialize(engine)
+      def initialize(engine, options)
         @engine = engine
+        @options = options
+        @release = options[:release]
       end
 
       def each
@@ -17,14 +19,16 @@ module Simp
       end
 
       def [](index)
-        Simp::Metadata::Release.new(engine, index)
+        Simp::Metadata::Release.new(engine, index, @options)
       end
 
       def keys
         result = {}
         engine.sources.each do |_name, source|
-          source.releases.keys.each do |name|
-            result[name] = true
+          if @release
+            result[@release] = true if source.releases.key?(@release)
+          else
+          source.releases.keys.each { |name| result[name] = true }
           end
         end
         result.keys

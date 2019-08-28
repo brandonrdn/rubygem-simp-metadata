@@ -4,12 +4,12 @@ module Simp
       include Enumerable
       attr_accessor :engine
       attr_accessor :version
-      attr_accessor :type
+      attr_accessor :el_version
 
-      def initialize(engine, version = nil, type = nil)
+      def initialize(engine, version = nil, el_version = nil)
         @engine = engine
         @version = version
-        @type = type
+        @el_version = el_version
       end
 
       def to_s
@@ -27,7 +27,7 @@ module Simp
       end
 
       def [](index)
-        Simp::Metadata::Package.new(engine, index, version)
+        Simp::Metadata::Package.new(engine, index, version, el_version)
       end
 
       def key?(name)
@@ -36,16 +36,9 @@ module Simp
 
       def keys
         result = {}
-        if version.nil?
-          engine.sources.each do |_name, source|
-            source.packages.keys.each do |name|
-              result[name] = true
-            end
-          end
-        else
           engine.sources.each do |_name, source|
             if source.releases.key?(version)
-              source.releases[version]['packages'].each do |package, _data|
+              source.packages[version][el_version].each do |package, _data|
                 result[package] = true
                 end
             else
@@ -58,16 +51,9 @@ module Simp
               end
             end
           end
-        end
         result.keys
       end
 
-      def create(name, settings = {})
-        unless key?(name)
-          engine.writable_source.packages[name] = settings
-          engine.writable_source.dirty = true
-        end
-      end
     end
   end
 end

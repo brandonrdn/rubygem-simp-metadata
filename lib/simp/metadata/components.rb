@@ -6,10 +6,11 @@ module Simp
       attr_accessor :version
       attr_accessor :type
 
-      def initialize(engine, version = nil, type = nil)
+      def initialize(engine, component = nil, version = nil, type = nil)
         @engine = engine
         @version = version
         @type = type
+        @component = component
       end
 
       def to_s
@@ -21,8 +22,8 @@ module Simp
       end
 
       def each
-        keys.each do |version|
-          yield self[version]
+        keys.each do |key|
+          yield self[key]
         end
       end
 
@@ -37,22 +38,28 @@ module Simp
       def keys
         result = {}
         if version.nil?
-          engine.sources.each do |_name, source|
-            source.components.keys.each do |name|
-              result[name] = true
+          engine.sources.each do |_source_name, source_data|
+            if @component
+              result[@component] = true if source_data.components.key?(@component)
+            else
+              source_data.components.keys.each { |name| result[name] = true }
             end
           end
         else
           engine.sources.each do |_name, source|
             if source.releases.key?(version)
-              source.releases[version].each do |component, _data|
-                result[component] = true
+              if @component
+                result[@component] = true if source.releases[version].key?(@component)
+              else
+                source.releases[version].each { |component, _data| result[component] = true }
               end
             else
               source.release(version).each do |element, data|
                 if element == 'components'
-                  data.each do |component, _data|
-                    result[component] = true
+                  if @component
+                    result[@component] = true if data.key?(@component)
+                  else
+                    data.each { |component, _data| result[component] = true }
                   end
                 end
               end

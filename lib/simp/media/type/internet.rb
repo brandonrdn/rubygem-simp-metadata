@@ -23,8 +23,8 @@ module Simp
           end
         end
 
-        def fetch_component(component, options)
-          Simp::Metadata.download_component(component, options.merge('target' => input_directory))
+        def fetch_source(source, options)
+          Simp::Metadata.download_source(source, options.merge('target' => input_directory))
         end
 
         def cleanup

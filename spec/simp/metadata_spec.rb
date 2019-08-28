@@ -3,24 +3,24 @@ require 'simp/metadata'
 
 shared_examples_for 'log_wrapper' do |method_name|
   it 'should not throw an error' do
-    $simp_metadata_debug_level = 'debug2'
+    Simp::Metadata.debug_level('debug2')
     tempdir = Dir.mktmpdir('simp-media-rspec')
     expect { Simp::Metadata.send(method_name, 'test') }.not_to raise_error
     FileUtils.rmtree(tempdir)
   end
   it 'should not throw an error if logging is disabled' do
     tempdir = Dir.mktmpdir('simp-media-rspec')
-    $simp_metadata_debug_level = 'disabled'
+    Simp::Metadata.debug_level('disabled')
     expect { Simp::Metadata.send(method_name, 'test') }.not_to raise_error
     FileUtils.rmtree(tempdir)
-    $simp_metadata_debug_level = 'debug2'
+    Simp::Metadata.debug_level('debug2')
   end
   it 'should not throw an error if logging is left default' do
     tempdir = Dir.mktmpdir('simp-media-rspec')
-    $simp_metadata_debug_level = 'warning'
+    Simp::Metadata.debug_level('warning')
     expect { Simp::Metadata.send(method_name, 'test') }.not_to raise_error
     FileUtils.rmtree(tempdir)
-    $simp_metadata_debug_level = 'debug2'
+    Simp::Metadata.debug_level('debug2')
   end
 end
 
@@ -163,7 +163,8 @@ describe Simp::Metadata do
     end
     xit 'should not throw an error when downloading a simp-metadata url' do
       tempdir = Dir.mktmpdir('simp-media-rspec')
-      engine = Simp::Metadata::Engine.new(nil, nil, 'enterprise')
+      options = {edition: 'enterprise'}
+      engine = Simp::Metadata::Engine.new(nil, nil, options)
       component = engine.components['enterprise-metadata']
       expect { Simp::Metadata.fetch_simp_enterprise(component.primary.url, "#{tempdir}/simp-metadata", component, component.primary, 'target' => tempdir) }.not_to raise_error
       FileUtils.rmtree(tempdir)

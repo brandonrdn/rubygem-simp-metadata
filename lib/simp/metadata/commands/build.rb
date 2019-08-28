@@ -2,124 +2,112 @@ require_relative '../commands'
 module Simp
   module Metadata
     module Commands
+      # Command to build SIMP deliverables
       class Build < Simp::Metadata::Commands::Base
-        def run(argv, engine = nil)
-          subcommand = argv[0]
+        attr_accessor :argv, :engine, :root
 
-          case subcommand
-          when '--help', '-h'
-            options = defaults(argv) do |opts, options|
-              opts.banner = 'Usage: simp-metadata build <iso|tarball> [options]'
-            end
+        def description
+          'Build release ISO and Tarballs'
+        end
 
-          when 'iso'
-            options = defaults(argv) do |opts, options|
-              opts.banner = 'Usage: simp-metadata build iso [-v <release>] [-p <el6|el7>] [-d <os_family>]'
-              opts.on('-d', '--distribution [distro]', 'Distribution to use (CentOS or RedHat). If set, will only build from <distro> ISOs') do |distro|
-                options['distribution'] = distro
-              end
-              opts.on('-b', '--build_version', 'Specify which EL version you want to build on (6 or 7). If set, will only build from this version of base ISOs') do |build_version|
-                options['build_version'] = build_version
-              end
-              opts.on('-T', '--tar_cache [folder]', 'Folder of tarballs to use during build (defaults to : ./tarballs') do |tar_cache|
-                options['tar_cache'] = tar_cache
-              end
-              opts.on('-R', '--rpm_cache [folder]', 'Folder of RPMs to use during build (defaults to: ./rpms') do |rpm_cache|
-                options['rpm_cache'] = rpm_cache
-              end
-              opts.on('-I', '--iso_cache [folder]', 'Folder of base ISOs to use for the build (defaults to: ./iso)') do |iso_cache|
-                options['iso_cache'] = iso_cache
-              end
-              opts.on('-B', '--build_iso [iso]', 'Specify ISO to use for build (Default: Build all available ISOs in iso_cache') do |build_iso|
-                options['build_iso'] = build_iso
-              end
-              opts.on('-O', '--overlay_tarball', 'Uses pre-existing overlay tarball for ISO build. Default: Build tarball from scratch') do |overlay|
-                options['overlay_tarball'] = overlay
-              end
-              opts.on('-V', '--verbose', 'Detailed output for all commands') do |verbose|
-                options['verbose'] = verbose
-              end
-              opts.on('-P', '--preserve', 'Preserves the build directory and all files used during build') do |preserve|
-                options['preserve'] = preserve
-              end
-            end
-            engine, root = get_engine(engine, options)
-            simp_build = Simp::Metadata::Build.new(engine, nil, options['edition'])
-            simp_build.build('iso', nil)
+        def default_options
+          defaults(argv) do |opts, _options|
+            opts.banner = 'Usage: simp-metadata build <iso|tarball> [options]'
+            opts.banner << "  #{description}"
+          end
+        end
 
-          when 'tarball'
-            options = defaults(argv) do |opts, options|
-              opts.banner = "Usage: simp-metadata build tarball [-v <release>] [-p <el6|el7>] [-d <os_family>] [ release | component | build ]\n\n"
-              opts.banner << "  Tarball Types:\n"
-              opts.banner << "     component: Builds a tarball of release components with the SIMP/noarch structure\n"
-              opts.banner << "     build: Creates a tarball of build files\n"
-              opts.banner << "     overlay: Builds the entire overlay tarball(default)\n\n"
-              opts.on('-D', '--distribution [distro]', 'Distribution to use: CentOS, RedHat') do |distro|
-                options['distribution'] = distro
-              end
-              options['build_dir'] = Dir.pwd
-              opts.on('-b', '--build_dir [folder]', 'Directory to build in (Default: ./build') do |build_dir|
-                options['build_dir'] = build_dir
-              end
-              options['source'] = []
-              opts.on('-s', '--source [path/url]', 'URL or path to grab RPMs from (can be passed more than once)') do |source|
-                options['source'] << source
-              end
-              opts.on('-T', '--tar_cache [folder]', 'Folder to cache tarballs during build (pre-existing tarballs will be used in the build') do |tar_cache|
-                options['tar_cache'] = tar_cache
-              end
-              opts.on('-R', '--rpm_cache [folder]', 'Folder to cache RPMs during build (pre-existing RPMs will be used in the build') do |rpm_cache|
-                options['rpm_cache'] = rpm_cache
-              end
-              opts.on('-P', '--preserve', 'Preserves the build directory and all files used during build') do |preserve|
-                options['preserve'] = preserve
-              end
-            end
-            engine, root = get_engine(engine, options)
-            tarball_type = argv[1]
+        def options_hash
+          {
+            'distribution' => "'-d', '--distribution [distribution]', 'Distribution to build (CentOS or RedHat)'",
+            'build_version' => "'-b', '--build_version', 'el_version to build'",
+            'tar_cache' => "'-T', '--tar_cache [dir]', 'Directory of tarballs used to build'",
+            'rpm_cache' => "'-R', '--rpm_cache [dir]', 'Directory of RPMs to use during build'",
+            'iso_cache' => "'-I', '--iso_cache [dir]', 'Directory of base ISOs to use for the build'",
+            'build_iso' => "'-B', '--build_iso [iso]', 'Specify a single base ISO to use for build'",
+            'overlay_tarball' => "'-O', '--overlay_tarball', 'Uses pre-existing overlay tarball for ISO build.'",
+            'verbose' => "'-V', '--verbose', 'Detailed output for all commands'",
+            'preserve' => "'-P', '--preserve', 'Preserves the build directory and all files used during build'",
+            'upstream_build' => "'-U', '--upstream-build', 'Internal option for building. Not for customer use'"
+          }
+        end
 
-            simp_build = Simp::Metadata::Build.new(engine, nil, options['edition'])
-
-            type = if tarball_type.nil?
-                     'overlay'
-                   else
-                     tarball_type
-                   end
-            simp_build.build('tarball', type)
-          when 'components'
-            options = defaults(argv) do |opts, options|
-              opts.banner = "Usage: simp-metadata build components [-v <release>] [-p <el6|el7>] [-d <os_family>]\n\n"
-              opts.on('-D', '--distribution [distro]', 'Distribution to use: CentOS, RedHat') do |distro|
-                options['distribution'] = distro
-              end
-              opts.on('-a', '--all', 'Ignores existing RPMs, creates all RPMs') do |all|
-                options['all'] = all
-              end
-              opts.on('-b', '--build_dir [folder]', 'Directory to build in (Default: ./build') do |build_dir|
-                options['build_dir'] = build_dir
-              end
-            end
-            engine, root = get_engine(engine, options)
-            release = options['release']
-            abort(Simp::Metadata.critical("No release specified")[0]) unless release
-            components = engine.releases[release].components
-            components.each do |component|
-              data = engine.releases[release].components[component]
-              if options['all']
-                data.build
-              else
-                require 'pry'; require 'pry-byebug'; binding.pry
-
-                exit_code = Simp::Metadata.run("#{data.download_source}")
-                puts exit_code
-                #data.build unless exit_code == 0
-              end
-            end
-          else
-            abort("Cannot build #{subcommand}")
+        def iso_builder
+          options = defaults(argv) do |opts, _options|
+            opts.banner = 'Usage: simp-metadata build iso [-v <release>]'
+            options_hash.each { |name, settings| opts.on(settings) { |setting| options[name] = setting } }
           end
 
-          engine.save((['simp-metadata', 'component'] + argv).join(' ')) if root
+          @engine, @root = get_engine(engine, options)
+          simp_build = Simp::Metadata::Build.new(engine, options[:release], options[:el_version])
+          simp_build.build('iso')
+        end
+
+        def tarball_builder
+          options = defaults(argv) do |opts, _options|
+            opts.banner = "Usage: simp-metadata build tarball build [-v <release>]"
+            options_hash.each { |name, settings| opts.on(settings) { |setting| options[name] = setting } }
+          end
+          @engine, @root = get_engine(engine, options)
+          simp_build = Simp::Metadata::Build.new(engine, nil, options[:edition])
+          simp_build.build('tarball')
+        end
+
+        def components_builder
+          options = defaults(argv) do |opts, _options|
+            opts.banner = "Usage: simp-metadata build components [-v <release>] [-p <el6|el7>] [-D <os_family>]\n\n"
+            options_hash.each { |name, settings| opts.on(settings) { |setting| options[name] = setting } }
+          end
+          @engine, @root = get_engine(engine, options)
+          release = options[:release]
+          build_dir = options[:build_dir] || "#{Dir.pwd}/build"
+          abort(Simp::Metadata.critical("No release specified")[0]) unless release
+          components = engine.releases[release].sources
+          components.each do |component|
+            unless options[:force]
+              puts "RPM #{component.rpm_name} already exists. Skipping..." unless component.download_source.nil?
+              next
+            end
+            component.build(build_dir)
+          end
+          puts "Built RPMs are located in #{build_dir}"
+        end
+
+        def component_builder
+          options = defaults(argv) do |opts, _options|
+            opts.banner = "Usage: simp-metadata build component [-v <release>] [-p <el6|el7>] <component>\n\n"
+            options_hash.each { |name, settings| opts.on(settings) { |setting| options[name] = setting } }
+          end
+          @engine, @root = get_engine(engine, options)
+          release = options[:release]
+          component_name = argv[1]
+          build_dir = options[:build_dir] || Simp::Metadata::BuildHandler.rpm_cache
+          abort(Simp::Metadata.critical("No release specified")[0]) unless release
+          abort(Simp::Metadata.critical("No component specified")[0]) unless component_name
+          component = engine.releases[release].sources[component_name]
+
+          unless options[:force]
+            if File.exist?("#{build_dir}/#{component.rpm_name}")
+              exit(Simp::Metadata.critical("RPM #{component.rpm_name} already exists"))
+            end
+          end
+          component.build(build_dir)
+        end
+
+        def save
+          engine.save(([:simp_metadata, 'component'] + argv).join(' ')) if @root
+        end
+
+        def help
+          default options
+        end
+
+        def run(argv, engine = nil)
+          @argv = argv
+          @engine = engine
+          subcommand = %w[-h --help help].include?(@argv[0]) ? 'help' : @argv[0]
+          public_send("#{subcommand}_builder")
+          save
         rescue RuntimeError => e
           Simp::Metadata.critical(e.message)
           exit 5

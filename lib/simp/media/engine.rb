@@ -53,14 +53,14 @@ module Simp
         end
         @cleanup = []
         @options = options
-        raise 'input_type must be specified' if options['input_type'].nil?
-        raise 'output_type must be specified' if options['output_type'].nil?
-        @input = Module.const_get("Simp::Media::Type::#{@options['input_type'].capitalize}").new(options, self)
-        @output = Module.const_get("Simp::Media::Type::#{@options['output_type'].capitalize}").new(options, self)
+        raise 'input_type must be specified' if options[:input_type].nil?
+        raise 'output_type must be specified' if options[:output_type].nil?
+        @input = Module.const_get("Simp::Media::Type::#{@options[:input_type].capitalize}").new(options, self)
+        @output = Module.const_get("Simp::Media::Type::#{@options[:output_type].capitalize}").new(options, self)
       end
 
       def run
-        # XXX ToDo: Need to not create a target_directory if an input directory exists
+        # ToDo: Need to not create a target_directory if an input directory exists
         if @output.target_directory.nil?
           target = Dir.mktmpdir('cachedir')
           @cleanup << target
@@ -68,14 +68,14 @@ module Simp
           target = @output.target_directory
         end
 
-        # XXX ToDo: only set this if input is specified
-        @input.input_directory = @options['input']
+        # ToDo: only set this if input is specified
+        @input.input_directory = @options[:input]
 
-        metadata = Simp::Metadata::Engine.new(nil, nil, @options['edition'])
-        version = @options['version']
+        metadata = Simp::Metadata::Engine.new(nil, nil, @options)
+        version = @options[:version]
         metadata.releases[version].components.each do |component|
           info("Adding #{component.name}")
-          retval = @input.fetch_component(component, {})
+          retval = @input.fetch_source(component, {})
           @output.add_component(component, retval)
         end
         @output.finalize(nil)

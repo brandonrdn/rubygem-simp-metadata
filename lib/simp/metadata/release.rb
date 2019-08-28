@@ -5,17 +5,14 @@ module Simp
       attr_accessor :engine
       attr_accessor :version
 
-      def initialize(engine, version)
+      def initialize(engine, version, options = {})
         @engine = engine
         @version = version
+        @options = options
       end
 
       def components(type = nil)
-        Simp::Metadata::Components.new(engine, version, type)
-      end
-
-      def packages(type = nil)
-        Simp::Metadata::Packages.new(engine, version, type)
+        Simp::Metadata::Components.new(engine, @options[:component], version, type)
       end
 
       def platforms
@@ -45,14 +42,14 @@ module Simp
 
       def puppetfile(options = {})
         contents = []
-        if options['type'] == 'simp-core'
+        if options[:type] == 'simp-core'
           contents << "moduledir 'src'"
           contents << ''
           contents << puppetfile_component(components['simp-doc'], options)
           contents << "moduledir 'src/assets'"
           contents << ''
           components.each do |component|
-            if component.component_type == 'rpm'
+            if component.component_type == 'asset'
               contents << puppetfile_component(component, options)
             end
             if component.component_type == 'rubygem'
@@ -91,7 +88,7 @@ module Simp
           end
         end
 
-        compare_release.components.each do |comp|
+        compare_release.sources.each do |comp|
           self_component_hash = {}
           comp.each do |key, value|
             if !attribute.nil?
@@ -118,7 +115,7 @@ module Simp
       end
 
       def add_component(component,hash)
-        abort(Simp::Metadata.critical("#{component} is not a valid SIMP Component. Please use `simp-metadata component add` if this is a valid component")[0]) unless engine.components.key?(component)
+        abort(Simp::Metadata.critical("#{component} is not a valid SIMP Component. Please use `simp-metadata component add` if this is a valid component")[0]) unless engine.sources.key?(component)
         abort(Simp::Metadata.critical("#{component} is already part of SIMP #{version}")[0]) if components.key?(component)
         engine.writable_source.releases[version][component] = hash
         engine.writable_source.dirty = true

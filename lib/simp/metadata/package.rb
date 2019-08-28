@@ -4,38 +4,28 @@ module Simp
       include Enumerable
       attr_accessor :engine
       attr_accessor :release_version
+      attr_accessor :el_version
 
-      def initialize(engine, name, version)
+      def initialize(engine, name, version, el_version)
         @engine = engine
         @name = name
         @release_version = version
+        @el_version = el_version
       end
 
       def to_s
         name
       end
 
-      def name(type = 'package')
+      def name
         @name
       end
 
-      def package_source
-        retval = engine.sources['bootstrap_metadata']
-        engine.sources.each do |_name, source|
-          next if source.packages.nil?
-          if source.packages.key?(name)
-            retval = source
-            break
-          end
-        end
-        retval
-      end
-
       def release_source
-        retval = engine.sources['bootstrap_metadata']
+        retval = engine.sources[:bootstrap_metadata]
         engine.sources.each do |_name, source|
           if source.releases.key?(release_version)
-            if source.releases[release_version]['packages'].key?(name)
+            if source.packages[release_version][el_version].key?(name)
               retval = source
               break
             end
@@ -49,31 +39,11 @@ module Simp
         retval
       end
 
-      #
-      # Will be used to grab method based data in the future, rather
-      # then calling get_from_release or get_from_package directly,
-      #
-      # For now, just use it in Simp::Metadata::Buildinfo
-      def fetch_data(item)
-        package = get_from_package
-        release = get_from_release
-        platform = get_from_platform
-        if release.key?(item)
-          release[item]
-        else
-          package[item]
-        end
-      end
-
-      def get_from_package
-        package_source.packages[name]
-      end
-
       def get_from_release
         retval = {}
         if release_source.releases.key?(release_version)
-          if release_source.releases[release_version]['packages'].key?(name)
-            retval = release_source.releases[release_version]['packages'][name]
+          if release_source.packages[release_version][el_version].key?(name)
+            retval = release_source.packages[release_version][el_version][name]
           end
         else
           if release_source.release(release_version).key?(name)
@@ -84,7 +54,7 @@ module Simp
       end
 
       def keys
-        %w(rpm_name, url, version, revision)
+        %w(rpm_name, source, version, repo)
       end
 
       def [](index)
@@ -98,15 +68,19 @@ module Simp
       end
 
       def rpm_name
-        get_from_release['rpm_name']
+        get_from_release[:rpm_name]
       end
 
-      def url
-        get_from_release['source']
+      def source
+        get_from_release[:source]
       end
 
       def version
-        rpm_name.scan(/[0-9]+[.][0-9]+[.][0-9]+/).to_s
+        rpm_name.scan(/[0-9]+[.][0-9]+[.][0-9]+/).join('')
+      end
+
+      def repo
+        get_from_release[:repo]
       end
 
       def diff(package, attribute)

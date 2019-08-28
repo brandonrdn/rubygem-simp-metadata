@@ -1,0 +1,7 @@
+
+Import.rb: 
+  - Add some documentation around `EXTRA_REPO=` variable that can be passed
+  - Figure out if commented variables are needed (multiple)
+
+metadata.rb:
+  - Global variables needed??

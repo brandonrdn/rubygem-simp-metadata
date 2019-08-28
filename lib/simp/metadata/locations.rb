@@ -2,19 +2,19 @@ module Simp
   module Metadata
     class Locations
       include Enumerable
-      attr_accessor :locationinfo
+      attr_accessor :location_info
       attr_accessor :component
 
-      def initialize(locationinfo, component)
-        @locationinfo = locationinfo
+      def initialize(location_info, component)
+        @location_info = location_info
         @component = component
       end
 
       def data
-        if locationinfo['locations'].nil?
-          [locationinfo['primary_source']] + locationinfo['mirrors']
+        if location_info['locations'].nil?
+          [location_info['primary_source']] + location_info['mirrors']
         else
-          locationinfo['locations']
+          location_info['locations']
         end
       end
 
@@ -33,14 +33,14 @@ module Simp
       end
 
       def [](location)
-        Simp::Metadata::Location.new(locationinfo, data[location], component)
+        Simp::Metadata::Location.new(location_info, data[location], component)
       end
 
       def primary
         retval = find(&:primary)
         if retval.nil?
-          if locationinfo.key?('primary_source')
-            retval = Simp::Metadata::Location.new(locationinfo, locationinfo['primary_source'], component)
+          if location_info.key?('primary_source')
+            retval = Simp::Metadata::Location.new(location_info, location_info['primary_source'], component)
           else
             retval = first
           end

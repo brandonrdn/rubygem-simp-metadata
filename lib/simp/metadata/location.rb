@@ -2,12 +2,12 @@ require 'uri'
 module Simp
   module Metadata
     class Location
-      attr_accessor :locationinfo
+      attr_accessor :location_info
       attr_accessor :location
       attr_accessor :component
 
-      def initialize(locationinfo, location, component)
-        @locationinfo = locationinfo
+      def initialize(location_info, location, component)
+        @location_info = location_info
         @location = location
         @component = component
       end
@@ -88,7 +88,7 @@ module Simp
           when 'simp-enterprise'
             if uri.query.class == String
               query_elements = uri.query.split('&')
-              newquery = []
+              new_query = []
               found_version = false
               found_filetype = false
               query_elements.each do |element|
@@ -97,32 +97,32 @@ module Simp
                   if elements[0] == 'version'
                     found_version = true
                     elements[1] = component.version
-                    newquery << elements.join('=')
+                    new_query << elements.join('=')
                   elsif elements[0] == 'filetype'
                     found_filetype = true
                     elements[1] = component.extension
-                    newquery << elements.join('=')
+                    new_query << elements.join('=')
                   else
-                    newquery << element
+                    new_query << element
                   end
                 else
-                  newquery << element
+                  new_query << element
                 end
               end
-              newquery << "version=#{component.version}" unless found_version
+              new_query << "version=#{component.version}" unless found_version
 
               unless found_filetype
-                newquery << "filetype=#{component.extension}"
+                new_query << "filetype=#{component.extension}"
               end
 
-              uri.query = newquery.join('&')
+              uri.query = new_query.join('&')
             end
             uri.to_s
 
           when 'simp'
             if uri.query.class == String
               query_elements = uri.query.split('&')
-              newquery = []
+              new_query = []
               found_version = false
               found_filetype = false
               query_elements.each do |element|
@@ -131,23 +131,23 @@ module Simp
                   if elements[0] == 'version'
                     found_version = true
                     elements[1] = component.version
-                    newquery << elements.join('=')
+                    new_query << elements.join('=')
                   elsif elements[0] == 'filetype'
                     found_filetype = true
                     elements[1] = component.extension
-                    newquery << elements.join('=')
+                    new_query << elements.join('=')
                   else
-                    newquery << element
+                    new_query << element
                   end
                 else
-                  newquery << element
+                  new_query << element
                 end
               end
-              newquery << "version=#{component.version}" unless found_version
+              new_query << "version=#{component.version}" unless found_version
               unless found_filetype
-                newquery << "filetype=#{component.extension}"
+                new_query << "filetype=#{component.extension}"
               end
-              uri.query = newquery.join('&')
+              uri.query = new_query.join('&')
             end
             uri.to_s
           else

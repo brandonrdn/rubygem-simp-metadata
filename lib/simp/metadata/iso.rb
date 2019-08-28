@@ -21,7 +21,7 @@ module Simp
       end
 
       def iso_source
-        retval = engine.sources['bootstrap_metadata']
+        retval = engine.sources[:bootstrap_metadata]
         engine.sources.each do |_name, source|
           next if source.isos.nil?
           if source.isos.key?(name)
@@ -37,19 +37,19 @@ module Simp
       end
 
       def size
-        get_from_iso['size']
+        get_from_iso[:size]
       end
 
       def checksum
-        get_from_iso['checksum']
+        get_from_iso[:checksum]
       end
 
       def primary
-        get_from_iso['primary']
+        get_from_iso[:primary]
       end
 
       def platform
-        get_from_iso['platform']
+        get_from_iso[:platform]
       end
 
       def dependencies
@@ -57,7 +57,7 @@ module Simp
         engine.sources.each do |_name, source|
           next if source.isos.nil?
           source.isos.each do |image, data|
-            next unless data['platform'] == platform
+            next unless data[:platform] == platform
             result[image] = true
           end
         end

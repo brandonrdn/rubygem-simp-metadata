@@ -23,11 +23,10 @@ module Simp
 
       def images
         hash = {}
-        retval = engine.sources['bootstrap_metadata']
         engine.sources.each do |_name, source|
           next if source.isos.nil?
           source.isos.each do |iso,data|
-            if data['platform'] == name
+            if data[:platform] == name
             hash[iso] = data
           end
           end

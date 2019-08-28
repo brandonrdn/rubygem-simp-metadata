@@ -6,16 +6,16 @@ module Simp
         def initialize(options, engine)
           super(options, engine)
           @cleanup = []
-          if options['output'].nil?
+          if options[:output].nil?
             raise 'output must be specified for control-repo output'
           end
-          @origtempdir = Dir.mktmpdir('cachedir')
-          @repopath = "#{@origtempdir}/control-repo"
-          FileUtils.mkdir_p(@repopath)
-          @cleanup << @origtempdir
-          exit_code = run("git clone #{options['output']} #{@repopath}")
+          @temp_cache_dir = Dir.mktmpdir('cachedir')
+          @repo_path = "#{@temp_cache_dir}/control-repo"
+          FileUtils.mkdir_p(@repo_path)
+          @cleanup << @temp_cache_dir
+          exit_code = run("git clone #{options[:output]} #{@repo_path}")
           unless exit_code.success?
-            uri = URI(options['output'])
+            uri = URI(options[:output])
             if uri.scheme == 'file'
               FileUtils.mkdir_p(uri.path)
               Dir.chdir(uri.path) do |path|
@@ -25,26 +25,26 @@ module Simp
                   run('git init')
                 end
 
-                run("git clone #{options['output']} #{@repopath}")
+                run("git clone #{options[:output]} #{@repo_path}")
               end
             else
               raise 'output is not a valid control-repo'
             end
           end
-          Dir.chdir(@repopath) do
-            exit_code = run("git checkout #{options['branch']}")
+          Dir.chdir(@repo_path) do
+            exit_code = run("git checkout #{options[:branch]}")
             unless exit_code.success?
-              exit_code = run("git checkout -b #{options['branch']}")
+              exit_code = run("git checkout -b #{options[:branch]}")
               unless exit_code.success?
-                raise "error, unable to checkout #{options['branch']} in git repo #{uri}"
+                raise "error, unable to checkout #{options[:branch]} in git repo #{uri}"
               end
             end
-            @branch = options['branch']
-            unless options['destination_branch'].nil?
-              @branch = options['destination_branch']
-              exit_code = run("git checkout -b #{options['destination_branch']}")
+            @branch = options[:branch]
+            unless options[:destination_branch].nil?
+              @branch = options[:destination_branch]
+              exit_code = run("git checkout -b #{options[:destination_branch]}")
               unless exit_code.success?
-                raise "error, unable to create branch #{options['destination_branch']} in git repo #{uri}"
+                raise "error, unable to create branch #{options[:destination_branch]} in git repo #{uri}"
               end
             end
             run('rm -rf SIMP/modules')
@@ -53,65 +53,65 @@ module Simp
         end
 
         def add_component(component, fetch_return_value)
-          if options['embed']
-            # XXX ToDo: Copy components to control-repo if embed == true
+          if options[:embed]
+            # ToDo: Copy components to control-repo if embed == true
             case component.component_type
             when 'documentation'
             when 'simp-metadata'
               subdirectory = 'SIMP/metadata'
-              outputpath = "#{@repopath}/#{subdirectory}/#{component.name}"
-              FileUtils.mkdir_p(outputpath)
+              output_path = "#{@repo_path}/#{subdirectory}/#{component.name}"
+              FileUtils.mkdir_p(output_path)
               if Dir.exist?("#{fetch_return_value['path']}/.git")
-                exit_code = run("cd #{fetch_return_value['path']} && git --work-tree=\"#{outputpath}\" checkout #{component.version} .")
+                exit_code = run("cd #{fetch_return_value['path']} && git --work-tree=\"#{output_path}\" checkout #{component.version} .")
               else
-                exit_code = run("cd #{fetch_return_value['path']} && tar -cf - . | tar -xvpf - -C \"#{outputpath}\"")
+                exit_code = run("cd #{fetch_return_value['path']} && tar -cf - . | tar -xvpf - -C \"#{output_path}\"")
               end
 
               unless exit_code.success?
-                error "unable to copy #{component.name} to #{outputpath}: error code #{exit_code.exitstatus}"
+                error "unable to copy #{component.name} to #{output_path}: error code #{exit_code.exitstatus}"
               end
             when 'puppet-module'
               subdirectory = 'SIMP/modules'
-              outputpath = "#{@repopath}/#{subdirectory}/#{component.module_name}"
-              debug2("Copying #{component.module_name} to #{outputpath}")
-              FileUtils.mkdir_p(outputpath)
-              exit_code = run("cd #{fetch_return_value['path']} && git --work-tree=\"#{outputpath}\" checkout #{component.version} .")
+              output_path = "#{@repo_path}/#{subdirectory}/#{component.module_name}"
+              debug2("Copying #{component.module_name} to #{output_path}")
+              FileUtils.mkdir_p(output_path)
+              exit_code = run("cd #{fetch_return_value['path']} && git --work-tree=\"#{output_path}\" checkout #{component.version} .")
               unless exit_code.success?
-                error "unable to copy #{component.module_name} to #{outputpath}: error code #{exit_code.exitstatus}"
+                error "unable to copy #{component.module_name} to #{output_path}: error code #{exit_code.exitstatus}"
               end
             else
               subdirectory = "SIMP/assets/#{component.name}"
               case component.output_type
               when :file
-                FileUtils.mkdir_p("#{@repopath}/#{subdirectory}")
-                FileUtils.cp(fetch_return_value['path'], "#{@repopath}/#{subdirectory}/#{component.output_filename}")
+                FileUtils.mkdir_p("#{@repo_path}/#{subdirectory}")
+                FileUtils.cp(fetch_return_value['path'], "#{@repo_path}/#{subdirectory}/#{component.output_filename}")
               end
             end
           else
-            # XXX ToDo: Add necessary references to generate the puppetfile during finalize
+            # ToDo: Add necessary references to generate the puppetfile during finalize
             raise 'not yet implemented'
           end
         end
 
         def finalize(_manifest)
-          # XXX ToDo: Generate Puppetfile (if options["embed"] == false)
+          # ToDo: Generate Puppetfile (if options["embed"] == false)
           #     Otherwise copy to control-repo
-          #     XXX ToDo: Munge Puppetfile
-          environmentconf = "#{@repopath}/environment.conf"
-          hierayaml = "#{@repopath}/hiera.yaml"
-          # XXX ToDo: Munge hiera.yaml
-          munge_hierayaml(hierayaml)
-          munge_environmentconf(environmentconf) if options['embed']
-          run("cd #{@repopath} && git add -A")
-          run("cd #{@repopath} && git commit -m \"simp-install: upgrade to #{options['version']}\"")
-          run("cd #{@repopath} && git push origin #{@branch}")
+          #     ToDo: Munge Puppetfile
+          environment_conf = "#{@repo_path}/environment.conf"
+          hiera_yaml = "#{@repo_path}/hiera.yaml"
+          # ToDo: Munge hiera.yaml
+          munge_hiera_yaml(hiera_yaml)
+          munge_environment_conf(environment_conf) if options[:embed]
+          run("cd #{@repo_path} && git add -A")
+          run("cd #{@repo_path} && git commit -m \"simp-install: upgrade to #{options[:version]}\"")
+          run("cd #{@repo_path} && git push origin #{@branch}")
         end
 
-        def munge_environmentconf(environmentconf)
-          # Munge environment.conf to add SIMP/modules to modulepath
-          if File.exist?(environmentconf)
-            data = File.read(environmentconf).split("\n")
-            data.each_with_index do |line, fileline|
+        def munge_environment_conf(environment_conf)
+          # Munge environment.conf to add SIMP/modules to module_path
+          if File.exist?(environment_conf)
+            data = File.read(environment_conf).split("\n")
+            data.each_with_index do |line, file_line|
               next unless /^modulepath = (?<capture>.*)$/ =~ line
               paths = capture.split(':')
               found = false
@@ -121,27 +121,27 @@ module Simp
                 found = true if path =~ /simp\/modules/
               end
               next if found
-              newarray = []
+              new_array = []
               paths.each do |path, index|
-                newarray << path
-                newarray << 'SIMP/modules' if index == module_index
+                new_array << path
+                new_array << 'SIMP/modules' if index == module_index
               end
-              data[fileline] = "modulepath = #{newarray.join(':')}"
-              File.open(environmentconf, 'w') { |f| f.write(data.join("\n")) }
+              data[file_line] = "modulepath = #{new_array.join(':')}"
+              File.open(environment_conf, 'w') { |f| f.write(data.join("\n")) }
             end
           else
-            File.open(environmentconf, 'w') { |f| f.write("modulepath = modules:SIMP/modules:$basemodulepath\n") }
+            File.open(environment_conf, 'w') { |f| f.write("modulepath = modules:SIMP/modules:$basemodulepath\n") }
           end
         end
 
-        def munge_hierayaml(hierayaml)
+        def munge_hiera_yaml(hiera_yaml)
           data = {}
-          if File.exist?(hierayaml)
-            data = YAML.load(File.read(hierayaml))
+          if File.exist?(hiera_yaml)
+            data = YAML.load(File.read(hiera_yaml))
             version = data['version']
             case version
             when 4
-              # XXX ToDo: Add version 4 hiera.yaml support
+              # ToDo: Add version 4 hiera.yaml support
               raise "currently version 4 hiera.yaml's are not supported"
             when 5
               found = false
@@ -155,7 +155,7 @@ module Simp
                 data['hierarchy'] << hash
               end
             when nil
-              # XXX ToDo: Add version 3 hiera.yaml support
+              # ToDo: Add version 3 hiera.yaml support
               raise "currently version 3 hiera.yaml's are not supported"
             end
           else
@@ -186,7 +186,7 @@ hierarchy:
             EOF
             data = YAML.load(raw_yaml)
           end
-          File.open(hierayaml, 'w') { |f| f.write(data.to_yaml) }
+          File.open(hiera_yaml, 'w') { |f| f.write(data.to_yaml) }
         end
 
         def cleanup

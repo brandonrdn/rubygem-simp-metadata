@@ -3,12 +3,15 @@
 # To change this template file, choose Tools | Templates
 # and open the template in the editor.
 
-require 'rubygems'
 require 'rake'
 require 'rake/clean'
-require 'rubygems/package_task'
 require 'rake/testtask'
 require 'rspec/core/rake_task'
+require 'rubygems'
+require 'rubygems/package_task'
+#require 'simp/rake/rubygem'
+
+#Simp::Rake::Rubygem.new('simp-rake-helpers', File.dirname(__FILE__))
 
 Rake::TestTask.new do |t|
   t.test_files = FileList['test/**/*.rb']
@@ -18,6 +21,7 @@ begin
   require 'rspec/core/rake_task'
   RSpec::Core::RakeTask.new(:spec)
 rescue LoadError
+  fail("Load Error for RSpec::Core::RakeTask")
 end
 
 begin

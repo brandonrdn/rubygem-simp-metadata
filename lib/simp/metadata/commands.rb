@@ -1,21 +1,11 @@
-# XXX ToDo: Dynamically load all files
-require 'simp/metadata/commands/base'
-require 'simp/metadata/commands/release'
-require 'simp/metadata/commands/releases'
-require 'simp/metadata/commands/save'
-require 'simp/metadata/commands/script'
-require 'simp/metadata/commands/clone'
-require 'simp/metadata/commands/set-write'
-require 'simp/metadata/commands/delete'
-require 'simp/metadata/commands/set-write-url'
-require 'simp/metadata/commands/update'
-require 'simp/metadata/commands/component'
-require 'simp/metadata/commands/pry'
-require 'simp/metadata/commands/search'
-require 'simp/metadata/commands/build'
+# ToDo: Dynamically load all files
+require 'require_all'
+require 'simp/metadata/build_handler'
+require_all "#{__dir__}/commands"
 
 module Simp
   module Metadata
+    # Commands Class
     module Commands
     end
   end

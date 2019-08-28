@@ -30,14 +30,14 @@ module Simp
         result = {}
         if version.nil?
           engine.sources.each do |_name, source|
-            source.isos.each do |name, data|
-              result[data['puppet_versions']] = true
+            source.isos.each do |_iso, data|
+              result[data[:puppet_versions]] = true
             end
           end
         else
           engine.sources.each do |_name, source|
             if source.releases.key?(version)
-              source.releases[version]['puppet_versions'].each do |version, _data|
+              source.releases[version][:puppet_versions].each do |version, _data|
                 result[version] = true
               end
             else
@@ -58,14 +58,14 @@ module Simp
         result = {}
         if version.nil?
           engine.sources.each do |_name, source|
-            source.isos.each do |name, data|
-              result[data['puppet_versions']] = true
+            source.isos.each do |_iso, data|
+              result[data[:puppet_versions]] = true
             end
           end
         else
           engine.sources.each do |_name, source|
             if source.releases.key?(version)
-              source.releases[version]['puppet_versions'].each do |version, data|
+              source.releases[version][:puppet_versions].each do |version, data|
                 result[version] = data.keys
               end
             else

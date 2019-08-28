@@ -34,14 +34,14 @@ module Simp
         result = {}
         if version.nil?
           engine.sources.each do |_name, source|
-            source.isos.each do |name, data|
-              result[data['platform']] = true
+            source.isos.each do |_iso, data|
+              result[data[:platform]] = true
             end
           end
         else
           engine.sources.each do |_name, source|
             if source.releases.key?(version)
-              source.releases[version]['platforms'].each do |platform, _data|
+              source.releases[version][:platforms].each do |platform, _data|
                 result[platform] = true
               end
             else

@@ -1,0 +1,175 @@
+# vim: set expandtab ts=2 sw=2:
+require 'simp/metadata'
+require 'yaml'
+upstream_repo = 'https://github.com/simp/simp-core.git'
+data_repo = 'git@github.com:simp/simp-metadata.git'
+currentdir = Dir.pwd
+
+begin
+  Dir.mkdir('scratch')
+  Dir.mkdir('scratch/data')
+rescue Errno::EEXIST => e
+  Simp::Metadata.critical(e.message)
+  Simp::Metadata.backtrace(e.backtrace)
+end
+
+Dir.chdir('scratch') do
+  Dir.exist?('upstream') ? Dir.chdir('upstream') {`git fetch origin`} : `git clone #{upstream_repo} upstream`
+end
+
+Dir.chdir('scratch/data') do
+  repo = 'simp-metadata'
+  Dir.exist?(repo) ? Dir.chdir(repo) {`git pull origin`} : `git clone #{data_repo} #{repo}`
+end
+
+begin
+  Dir.mkdir('scratch/data/releases')
+rescue Errno::EEXIST => e
+  Simp::Metadata.critical(e.message)
+  Simp::Metadata.backtrace(e.backtrace)
+end
+
+# repo = ENV.fetch('EXTRA_REPO', nil)
+# repos = repo.nil? ? [data_repo] : [data_repo, repo]
+# metadata = Simp::Metadata::Engine.new('scratch', repos)
+
+data = {}
+data['components'] = {}
+data['releases'] = {}
+data['packages'] = {}
+data['isos'] = {}
+data['platforms'] = {}
+components = data['components']
+# packages = data['packages']
+# isos = data['isos']
+# platforms = data['platforms']
+
+component_by_url = {}
+
+# Puppetfile Class
+class Puppetfile
+  attr_reader :repos
+
+  def initialize
+    @repos = {}
+    @module_dir = '/'
+  end
+
+  def mod(name, params = {})
+    @repos[name] = params.merge('destination' => @module_dir)
+  end
+
+  def forge(url)
+    puts url
+  end
+
+  def module_dir(name)
+    @module_dir = "/#{name}"
+  end
+end
+
+def parse_git(url)
+  case url
+  when /^https:/
+    split = url.split('/')
+    host = split[2]
+    path = split.drop(3).join('/').gsub('.git', '')
+    type = 'https'
+  when /^git@/
+    split = url.split(':')
+    host = split[0].gsub('git@', '')
+    path = split[1].gsub('.git', '')
+    type = 'ssh'
+  when /^git:/
+    split = url.split('/')
+    host = split[2]
+    path = split.drop(3).join('/').gsub('.git', '')
+    type = 'ssh'
+  else
+    abort(Simp::Metadata.critical("Unrecognized URL: #{url}. Expected `https://`, `git@`, or `git:`")[0])
+  end
+  {'host' => host, 'path' => path, 'type' => type}
+end
+
+# repo_url = {}
+
+Dir.chdir('scratch/upstream')
+branches = ['master', '6.0.0-Alpha-Release'] + `git tag -l`.split("\n")
+branches.each do |branch|
+  begin
+    puppetfile = Puppetfile.new
+    release = {}
+    `git checkout #{branch}`
+
+    next unless File.exist?('Puppetfile.stable')
+    
+    puppetfile.instance_eval(File.read('Puppetfile.stable').delete('}'))
+    puppetfile.repos.each do |key, value|
+      ret = {}
+      ret['type'] = 'git'
+      ret['authoritative'] = true
+      git_info = parse_git(value[:git])
+      ret['primary_source'] = git_info.dup.delete_if {|k, _v| k == 'type'}
+      object = {
+          'ref' => value[:ref],
+          'type' => git_info['type'],
+          'path' => value['destination']
+      }
+      if component_by_url.key?(ret['primary_source'])
+        release[component_by_url[ret['primary_source']]] = object
+      else
+        ['', '-1', '-2', '-3', '-4', '-5', '-6'].each do |opt|
+          new_key = key + opt
+          ret['mirrors'] = {'gitlab' => {'host' => 'gitlab.com', 'path' => 'simp/' + new_key}}
+          if components.key?(new_key)
+            component_type = components[new_key]['type']
+            ret_type = ret['type']
+            component_source = components[new_key]['primary_source']
+            ret_source = ret['primary_source']
+            if component_type != ret_type && component_source != ret_source
+              next
+            else
+              release[new_key] = object
+              break
+            end
+          else
+            components[new_key] = ret
+            component_by_url[ret['primary_source']] = new_key
+            release[new_key] = object
+            break
+          end
+        end
+      end
+    end
+    data['releases'][branch] = release
+  rescue => e
+    Simp::Metadata.critical(e.message)
+    Simp::Metadata.backtrace(e.backtrace)
+  end
+end
+Dir.chdir(currentdir)
+
+# V1 Updates
+comp = {'components' => components}
+File.open("scratch/data/simp-metadata/v1/components.yaml", 'w') {|f| f.write comp.to_yaml}
+
+data['releases'].each do |key, value|
+  release = {'releases' => {key => value}}
+  File.open("scratch/data/simp-metadata/v1/releases/#{key}.yaml", 'w') {|f| f.write release.to_yaml}
+end
+
+# V2 Updates
+data['packages'].each do |_packages, release|
+  release.each do |_release, el_version|
+    el_version.each do |_el_version, info|
+      package = {'packages' => {release => {el_version => info}}}
+      File.open("scratch/data/simp-metadata/v2/assets/#{key}.yaml", 'w') {|f| f.write package.to_yaml}
+    end
+  end
+end
+
+Dir.chdir('scratch/data') do
+  `git add -A`
+  `git commit -m "Auto Update by rubygem-simp-metadata"`
+  #  `git push origin`
+end

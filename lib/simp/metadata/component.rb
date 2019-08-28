@@ -1,6 +1,6 @@
 module Simp
   module Metadata
-    class Component
+    class Component < BuildHandler
       include Enumerable
       attr_accessor :engine
       attr_accessor :release_version
@@ -18,14 +18,14 @@ module Simp
       def name(type = 'component')
         case type
         when 'component'
-          @name
+          @name.to_s
         when 'puppetfile'
           if component_type == 'rubygem'
-            "rubygem-#{@name.tr('-', '_')}"
+            "rubygem-#{@name.to_s.tr('-', '_')}"
           elsif component_type == 'puppet-module'
-            @name.gsub(/pupmod-/, '')
+            @name.gsub(/pupmod-/, '').to_s
           else
-            @name
+            @name.to_s
           end
         else
           abort(Simp::Metadata.critical("Expected type to be 'component' or 'puppetfile'")[0])
@@ -33,7 +33,7 @@ module Simp
       end
 
       def component_source
-        retval = engine.sources['bootstrap_metadata']
+        retval = engine.sources[:simp_metadata]
         engine.sources.each do |_name, source|
           next if source.components.nil?
           if source.components.key?(name)
@@ -45,7 +45,7 @@ module Simp
       end
 
       def release_source
-        retval = engine.sources['bootstrap_metadata']
+        retval = engine.sources[:simp_metadata]
         engine.sources.each do |_name, source|
           if source.releases.key?(release_version)
             if source.releases[release_version].key?(name)
@@ -69,7 +69,6 @@ module Simp
       def fetch_data(item)
         component = get_from_component
         release = get_from_release
-        platform = get_from_platform
         if release.key?(item)
           release[item]
         else
@@ -139,14 +138,7 @@ module Simp
       end
 
       def real_asset_name
-        case component_type
-        when 'puppet-module'
-          get_from_component['module_name']
-        when 'rubygem'
-          get_from_component['gem_name']
-        else
-          get_from_component['asset_name']
-        end
+          get_from_component['component-name']
       end
 
       def module_name
@@ -157,8 +149,8 @@ module Simp
         if real_asset_name.nil?
           case component_type
           when 'puppet-module'
-            splitted = name.split('-')
-            splitted[splitted.size - 1]
+            split = name.split('-')
+            split[split.size - 1]
           else
             name
           end
@@ -200,12 +192,17 @@ module Simp
       end
 
       def locations
-        # XXX: ToDo Allow manifest.yaml to override locations
-        # XXX: ToDo Use primary_source and mirrors here if locations is empty
-        Simp::Metadata::Locations.new({'locations' => get_from_component['locations'], 'primary_source' => get_from_component['primary_source'], 'mirrors' => get_from_component['mirrors']}, self)
+        # ToDo: Allow manifest.yaml to override locations
+        # ToDo: Use primary_source and mirrors here if locations is empty
+        infohash = {
+            'locations' => get_from_component['locations'],
+            'primary_source' => get_from_component['primary_source'],
+            'mirrors' => get_from_component['mirrors']
+        }
+        Simp::Metadata::Locations.new(infohash, self)
       end
 
-      # XXX: ToDo Generate a filename, and output file type; ie, directory or file
+      # ToDo: Generate a filename, and output file type; ie, directory or file
 
       def format
         get_from_component['format']
@@ -223,18 +220,20 @@ module Simp
         get_from_component['authoritative']
       end
 
-      def deprecated?
-        deprecated
-      end
-
       def deprecated
         get_from_component['deprecated']
       end
 
+      def deprecated?
+        deprecated
+      end
+
       def revision
-        revision = get_from_component['revision']
+        revision = get_from_release['revision']
         if revision.nil?
           '0'
+        elsif !revision
+          nil
         else
           revision
         end
@@ -328,19 +327,21 @@ module Simp
       end
 
       def rpm_basename
-=begin
         if component_type == 'puppet-module'
-          if name =~ /pupmod-*/
-            name.to_s
+          if asset_name =~ /pupmod-*/
+            asset_name
           else
-            "pupmod-#{name}"
+            "pupmod-#{asset_name}"
+          end
+        elsif component_type == 'rubygem'
+          if asset_name =~ /rubygem-*/
+            asset_name
+          else
+            "rubygem-#{asset_name}"
           end
         else
-          name.to_s
+          asset_name
         end
-      end
-=end
-        real_asset_name
       end
 
       def component_version
@@ -355,7 +356,11 @@ module Simp
         if component_version =~ /^[0-9]+.[0-9]+.[0-9]+.[0-9]+/
           component_version
         else
-          "#{component_version}-#{revision}"
+          if !revision
+            component_version
+          else
+            "#{component_version}-#{revision}"
+          end
         end
       end
 
@@ -381,7 +386,7 @@ module Simp
       end
 
       def os_version
-        os_version = engine.options['os_version']
+        os_version = engine.options[:os_version]
         if os_version.nil?
           'el7'
         else
@@ -446,11 +451,11 @@ module Simp
             if metadata_source.writable?
               engine.metadata_source
             else
-              releases[options['release']].components[component] = settings
+              engine.releases[options[:release]].components[component] = settings
             end
             end
           rescue
-            Simp::Metadata.critical("Unable to create #{component} for #{options['release']} release")
+            Simp::Metadata.critical("Unable to create #{component} for #{options[:release]} release")
             exit 6
           end
         end
@@ -494,125 +499,42 @@ module Simp
       end
 
       def build(destination)
-        currentdir = Dir.pwd
-        destination = currentdir if destination.nil?
-        abort(Simp::Metadata.critical("Component #{name} is deprecated. Cannot build. Try downloading")[0]) if deprecated?
-        abort(Simp::Metadata.critical("File #{rpm_name} already exists in #{destination}. Please delete this file and re-run the command if you wish to replace it.")[0]) if File.exist?("#{destination}/#{rpm_name}")
+        component_rpm_build(name, destination)
+      end
 
-        # Create tmp dir and clone source
-        Dir.mktmpdir do |dir|
-          Dir.chdir(dir.to_s) do
-            Simp::Metadata.run("git clone #{url} source > /dev/null")
-            Dir.chdir('source') do
-              Simp::Metadata.run("git checkout #{version}")
-
-              # sanitize
-              excludes = %w(.git .gitignore)
-              if File.exist?('./.simp.yml')
-                config = YAML.load_file('.simp.yml')
-                if config.key?('sanitize')
-                  sanitize = config['sanitize']
-                  excludes = excludes + ['.simp.yml'] + sanitize['exclude'] if sanitize.key?('exclude')
-                  if sanitize.key?('scripts')
-                    sanitize['scripts'].each do |command|
-                      puts `#{command}`
-                    end
-                  end
-                end
-              end
-
-              # Make build dirs
-              FileUtils.makedirs "#{dir}/usr/share/simp/modules/#{module_name}"
-
-              # Create tarball and extract to tmp/usr/share/simp/#{module_name}
-              errorcode = Simp::Metadata.run("tar -cf - --exclude=./#{excludes.join(' --exclude=./')} . | tar -xvpf - -C #{dir}/usr/share/simp/modules/#{module_name}")
-              abort(Simp::Metadata.critical("Failed to create and extract tarball for #{name}")) unless errorcode == 0
-
-              # Set RPM build options
-              metadata = JSON.parse File.read('metadata.json')
-
-              heredoc = <<-HEREDOC
--s dir
--t rpm
---name '#{rpm_basename}'
---rpm-summary '#{metadata['name'].split('-')[1].capitalize} Puppet Module'
---description '#{metadata['summary']}'
---maintainer 'info@onyxpoint.com'
---category Applications/System
---prefix 'usr/share/simp/modules'
---url '#{metadata['source']}'
---vendor "Onyx Point, Inc"
---license '#{metadata['license']}'
---package '#{currentdir}/#{rpm_name}'
---version '#{metadata['version']}'
---iteration '#{revision}'
---architecture '#{target}'
---verbose
--C #{dir}/usr/share/simp/modules
---rpm-digest sha512 -d 'simp-adapter'
---directories=/usr/share/simp/modules/#{module_name}
-              HEREDOC
-
-              options = heredoc.tr("\n", ' ')
-
-              # Create RPM
-              Dir.chdir(dir.to_s) do
-                errorcode = Simp::Metadata.run("fpm #{options} 2> /dev/null")
-                abort(Simp::Metadata.critical("Failed to create RPM for #{module_name}")[0]) unless errorcode == 0
-                puts "RPM #{rpm_name} built successfully" if File.exist?("#{currentdir}/#{rpm_name}")
-              end
-            end
-          end
-        end
-        FileUtils.move "#{currentdir}/#{rpm_name}", destination unless currentdir == destination
+      def enterprise_paths
+        [
+            "#{base_enterprise_path}/products/simp-enterprise/#{module_name}",
+            "#{base_enterprise_path}/products/simp-enterprise-dev/#{module_name}"
+        ]
       end
 
       def download_source(src = nil, file = rpm_name)
         output = nil
-        el_version = os_version.split('el')[1]
         if src
           sources = [src]
         else
-          if component_source.to_s == 'enterprise-metadata'
-            sources = ["https://enterprise-download.simp-project.com:443/products/simp-enterprise/#{module_name}", "https://enterprise-download.simp-project.com:443/products/simp-enterprise-dev/#{module_name}"]
-          else
-            sources = ["https://download.simp-project.com/SIMP/yum/simp6/el/#{el_version}/x86_64", "https://download.simp-project.com/SIMP/yum/unstable/el/#{el_version}/x86_64"]
-          end
+          sources = component_source.to_s == 'enterprise-metadata' ? enterprise_paths : community_paths
         end
         sources.each do |source|
           if source =~ /^https?:/
             file_check = `curl -sLI #{source}/#{file} | head -n 1 | awk '{print $2}'`.chomp
             if file_check == '200'
               output = source
+              break
             end
           elsif File.exist?("#{source}/#{file}")
             output = source
+            break
           end
         end
         output
       end
 
       def download(destination, src = nil, file = rpm_name)
-        destination = Dir.pwd if destination.nil?
-        return if File.exist?("#{destination}/#{file}")
-        if download_source =~ /^https?:/
-          file_check = `curl -sLI #{download_source}/#{file} | head -n 1 | awk '{print $2}'`.chomp
-          if file_check == '200'
-            `wget -q --show-progress -P #{destination} #{download_source}/#{file}`
-            #File.open("#{destination}/#{file}", "w") do |opened|
-            #HTTParty.get("#{source}/#{file}", stream_body: true) do |fragment|
-            #  opened.write(fragment)
-            #end
-            #end
-          else
-            abort(Simp::Metadata.critical("#{rpm_name}: does not exist at source")[0])
-          end
-        elsif File.exist?("#{download_source}/#{file}")
-          FileUtils.cp "#{download_source}/#{file}", destination
-        end
-        return if File.exist?("#{destination}/#{file}")
+        source = src ? src : download_source(nil, rpm_name)
+        downloader(source, file, destination)
       end
-
     end
   end
 end

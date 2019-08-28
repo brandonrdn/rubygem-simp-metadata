@@ -56,10 +56,10 @@ describe Simp::Metadata::Buildinfo do
   describe "#['build_method']" do
     context "when type == 'rpm'" do
       it 'should return a String' do
-        expect(test_buildinfo('rpm')['build_method'].class.to_s).to eql('String')
+        expect(test_buildinfo('rpm')[:build_method].class.to_s).to eql('String')
       end
       it "should return 'simp-core'" do
-        expect(test_buildinfo('rpm')['build_method']).to eql('simp-core')
+        expect(test_buildinfo('rpm')[:build_method]).to eql('simp-core')
       end
     end
   end

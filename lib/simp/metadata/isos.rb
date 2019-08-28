@@ -31,22 +31,10 @@ module Simp
 
       def keys
         result = {}
-        if version.nil?
           engine.sources.each do |_name, source|
             source.isos.each do |name, _data|
               result[name] = true
             end
-          end
-        else
-          engine.sources.each do |_name, source|
-            next if source.isos.keys.size < 1
-            platforms = source.releases[version]['platforms'].keys
-            platforms.each do |platform|
-              engine.platforms[platform].images.each do |name, _data|
-                result[name] = true
-              end
-            end
-          end
         end
         result.keys
       end

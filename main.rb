@@ -6,7 +6,8 @@ require 'pp'
 require 'json'
 
 command, *args = ARGV
-metadata = Simp::Metadata::Engine.new('scratch/data')
+
+engine = Simp::Metadata::Engine.new
 
 def rest_request(request, method = 'GET', _body = nil)
   require 'net/http'
@@ -22,14 +23,11 @@ def rest_request(request, method = 'GET', _body = nil)
     request = Net::HTTP::Put.new(uri)
   when 'DELETE'
     request = Net::HTTP::Delete.new(uri)
+  else
+    exit(Simp::Metadata.error("Unrecognized URI request #{method}")[0])
   end
-  req_options = {
-    use_ssl: uri.scheme == 'https'
-  }
-
-  response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
-    http.request(request)
-  end
+  req_options = { use_ssl: uri.scheme == 'https' }
+  response = Net::HTTP.start(uri.hostname, uri.port, req_options) { |http| http.request(request) }
 
   # response.code
   JSON.parse(response.body)
@@ -40,34 +38,28 @@ when 'generate'
   options = OpenStruct.new
   options.puppetfile = false
   options.release = nil
-  opt_parser = OptionParser.new do |opts|
-    opts.banner = 'Usage: main.rb generate [options]'
-    opts.separator ''
-    opts.separator 'Specific options:'
-    opts.on('-p', '--puppetfile', 'Generate puppetfile') do |p|
-      options.puppetfile = p
-    end
-    opts.on('-r', '--release=MANDATORY', 'Release to generate') do |r|
-      options.release = r
-    end
+  option_parser = OptionParser.new do |parser|
+    parser.banner = 'Usage: main.rb generate [options]'
+    parser.separator ''
+    parser.separator 'Specific options:'
+    parser.on('-p', '--puppetfile', 'Generate puppetfile') { |puppetfile| options.puppetfile = puppetfile }
+    parser.on('-r', '--release=MANDATORY', 'Release to generate') { |release| options.release = release }
   end
-  opt_parser.parse!(args)
-  if options.release.nil?
-    puts 'must specify -r or --release'
-    exit 1
-  end
-  if options.puppetfile == true
-    paths = metadata.list_components_with_data(options.release)
+  parser.parse!(args)
+  exit(Simp::Metadata.critical('must specify -r or --release')[0]) if options.release.nil?
+
+  if options.puppetfile
+    paths = engine.list_components_with_data(options.release)
     file = []
     paths.each do |key, value|
       path = key.slice(1, key.length)
       file << "moduledir #{path}"
       file << ''
-      value.each do |modulename, modinfo|
-        file << "mod '#{modulename}',"
-        url = metadata.url(modulename)
-        file << "    :git => '#{url}'"
-        file << "    :ref => '#{modinfo['ref']}'"
+      value.each do |module_name, module_info|
+        file << "mod '#{module_name}',"
+        url = engine.url(module_name)
+        file << "    git: '#{url}'"
+        file << "    ref: '#{module_info[:ref]}'"
         file << ''
       end
     end
@@ -77,7 +69,7 @@ when 'mirror'
   options = OpenStruct.new
   options.puppetfile = false
   options.destination = 'scratch/mirror'
-  opt_parser = OptionParser.new do |opts|
+  parser = OptionParser.new do |opts|
     opts.banner = 'Usage: main.rb mirror [options]'
     opts.separator ''
     opts.separator 'Specific options:'
@@ -88,15 +80,18 @@ when 'mirror'
       options.destination = p
     end
   end
-  opt_parser.parse!(args)
+  parser.parse!(args)
   begin
     Dir.mkdir(options.destination)
-  rescue
+  rescue StandardError => e
+    Simp::Metadata.critical(e.message)
+    Simp::Metadata.backtrace(e.backtrace)
   end
+
   Dir.chdir(options.destination) do
-    components = metadata.component_list
+    components = engine.component_list
     components.each do |component|
-      url = metadata.url(component)
+      url = engine.url(component)
       puts url
       `git clone #{url} #{component}`
     end
