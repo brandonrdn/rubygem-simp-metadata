@@ -15,7 +15,7 @@ module Simp
         end
 
         def get_command_description(command)
-          mod = Module.const_get("Simp::Metadata::Commands::#{command.to_s}").new
+          mod = Module.const_get("Simp::Metadata::Commands::#{command}").new
           mod.description
         end
 
@@ -24,7 +24,7 @@ module Simp
           command.to_s.scan(/[A-Z][a-z]+/).join('-').downcase
         end
 
-        def run(_placeholder)
+        def run(_argv)
           help_hash = {}
           subcommands.each { |sub| help_hash[command_input(sub)] = get_command_description(sub) }
 

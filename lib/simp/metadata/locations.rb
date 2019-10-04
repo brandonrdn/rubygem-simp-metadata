@@ -1,5 +1,6 @@
 module Simp
   module Metadata
+    # Class for Component Locations
     class Locations
       include Enumerable
       attr_accessor :location_info
@@ -39,11 +40,11 @@ module Simp
       def primary
         retval = find(&:primary)
         if retval.nil?
-          if location_info.key?('primary_source')
-            retval = Simp::Metadata::Location.new(location_info, location_info['primary_source'], component)
-          else
-            retval = first
-          end
+          retval = if location_info.key?('primary_source')
+                     Simp::Metadata::Location.new(location_info, location_info['primary_source'], component)
+                   else
+                     first
+                   end
         end
         retval
       end

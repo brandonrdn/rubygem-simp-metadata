@@ -2,6 +2,7 @@ require 'fileutils'
 module Simp
   module Media
     module Type
+      # Media Tar Class
       class Tar < Simp::Media::Type::Base
         def initialize(options, engine)
           @cleanup = []
@@ -12,33 +13,38 @@ module Simp
           super(options, engine)
         end
 
+        def grab_subdirectory(component)
+          case component.component_type
+          when 'documentation'
+            'SIMP/docs'
+          when 'simp-metadata'
+            'SIMP/metadata'
+          when 'puppet-module'
+            'SIMP/modules'
+          else
+            "SIMP/assets/#{component.name}"
+          end
+        end
+
         def add_component(component, fetch_return_value)
-          subdirectory = case component.component_type
-                         when 'documentation'
-                           'SIMP/docs'
-                         when 'simp-metadata'
-                           'SIMP/metadata'
-                         when 'puppet-module'
-                           'SIMP/modules'
-                         else
-                           "SIMP/assets/#{component.name}"
-                         end
+          subdirectory = grab_subdirectory(component)
+          path = fetch_return_value[:path]
           case component.output_type
           when :directory
-            if Dir.exist?(fetch_return_value[:path])
+            if Dir.exist?(path)
               unless Dir.exist?(@tempdir + "/#{subdirectory}/#{component.name}")
                 FileUtils.mkdir_p(@tempdir + "/#{subdirectory}/#{component.name}")
               end
-              FileUtils.cp_r(fetch_return_value[:path] + '/.', @tempdir + "/#{subdirectory}/#{component.output_filename}")
+              FileUtils.cp_r(path + '/.', @tempdir + "/#{subdirectory}/#{component.output_filename}")
             else
-              raise "Unable to find component #{component.name} in input source: path=#{fetch_return_value[:path]}"
+              raise "Unable to find component #{component.name} in input source: path=#{path}"
             end
           when :file
-            if File.exist?(fetch_return_value[:path])
+            if File.exist?(path)
               FileUtils.mkdir_p(@tempdir + "/#{subdirectory}")
-              FileUtils.cp_r(fetch_return_value[:path], @tempdir + "/#{subdirectory}/#{component.output_filename}")
+              FileUtils.cp_r(path, @tempdir + "/#{subdirectory}/#{component.output_filename}")
             else
-              raise "Unable to find component #{component.name} in input source: path=#{fetch_return_value[:path]}"
+              raise "Unable to find component #{component.name} in input source: path=#{path}"
             end
           end
         end

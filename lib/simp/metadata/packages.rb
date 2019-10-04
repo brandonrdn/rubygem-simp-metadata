@@ -1,5 +1,6 @@
 module Simp
   module Metadata
+    # 3rd Party Packages Class
     class Packages
       include Enumerable
       attr_accessor :engine
@@ -36,24 +37,23 @@ module Simp
 
       def keys
         result = {}
-          engine.sources.each do |_name, source|
-            if source.releases.key?(version)
-              source.packages[version][el_version].each do |package, _data|
+        engine.sources.each do |_name, source|
+          if source.releases.key?(version)
+            source.packages[version][el_version].each do |package, _data|
+              result[package] = true
+            end
+          else
+            source.release(version).each do |element, data|
+              next unless element == 'packages'
+
+              data.each do |package, _data|
                 result[package] = true
-                end
-            else
-              source.release(version).each do |element, data|
-                if element == 'packages'
-                  data.each do |package, _data|
-                  result[package] = true
-                  end
-                end
               end
             end
           end
+        end
         result.keys
       end
-
     end
   end
 end

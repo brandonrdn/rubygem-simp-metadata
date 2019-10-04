@@ -1,6 +1,7 @@
 require 'uri'
 module Simp
   module Metadata
+    # Class for component location info
     class Location
       attr_accessor :location_info
       attr_accessor :location
@@ -25,7 +26,7 @@ module Simp
       end
 
       def keys
-        %w(extract primary method type url)
+        %w[extract primary method type url]
       end
 
       def [](index)
@@ -53,20 +54,10 @@ module Simp
       def method
         if @local_method
           @local_method
+        elsif location.key?('type')
+          location['type'] == 'git' ? 'git' : 'file'
         else
-          if location.key?('type')
-            if location['type'] == 'git'
-              'git'
-            else
-              'file'
-            end
-          else
-            if location.key?('method')
-              location['method']
-            else
-              'file'
-            end
-          end
+          location.key?('method') ? location['method'] : 'file'
         end
       end
 
@@ -79,113 +70,31 @@ module Simp
       end
 
       def url
-        if @local_url
-          @local_url
-        else
-          base = real_url
-          uri = Simp::Metadata.uri(base)
-          case uri.scheme
-          when 'simp-enterprise'
-            if uri.query.class == String
-              query_elements = uri.query.split('&')
-              new_query = []
-              found_version = false
-              found_filetype = false
-              query_elements.each do |element|
-                elements = element.split('=')
-                if elements.size > 1
-                  if elements[0] == 'version'
-                    found_version = true
-                    elements[1] = component.version
-                    new_query << elements.join('=')
-                  elsif elements[0] == 'filetype'
-                    found_filetype = true
-                    elements[1] = component.extension
-                    new_query << elements.join('=')
-                  else
-                    new_query << element
-                  end
-                else
-                  new_query << element
-                end
-              end
-              new_query << "version=#{component.version}" unless found_version
+        @local_url || real_url
+      end
 
-              unless found_filetype
-                new_query << "filetype=#{component.extension}"
-              end
-
-              uri.query = new_query.join('&')
-            end
-            uri.to_s
-
-          when 'simp'
-            if uri.query.class == String
-              query_elements = uri.query.split('&')
-              new_query = []
-              found_version = false
-              found_filetype = false
-              query_elements.each do |element|
-                elements = element.split('=')
-                if elements.size > 1
-                  if elements[0] == 'version'
-                    found_version = true
-                    elements[1] = component.version
-                    new_query << elements.join('=')
-                  elsif elements[0] == 'filetype'
-                    found_filetype = true
-                    elements[1] = component.extension
-                    new_query << elements.join('=')
-                  else
-                    new_query << element
-                  end
-                else
-                  new_query << element
-                end
-              end
-              new_query << "version=#{component.version}" unless found_version
-              unless found_filetype
-                new_query << "filetype=#{component.extension}"
-              end
-              uri.query = new_query.join('&')
-            end
-            uri.to_s
-          else
-            case component.component_type
-            when 'rubygem'
-              if base =~ /.*\.gem/
-              else
-                "#{base}/#{component.asset_name}-#{component.version}.gem"
-              end
-            end
-            base
+      def compiled_url
+        if component.component_type == 'rubygem'
+          case component.release_source.to_s
+          when 'simp-metadata'
+            "simp:///#{component.name}/#{component.binaryname}"
+          when 'enterprise-metadata'
+            "simp-enterprise:///#{component.name}/#{component.binaryname}"
           end
         end
       end
 
       def real_url
-        if component.compiled?
-          case component.component_type
-          when 'rubygem'
-            case component.release_source.to_s
-            when 'simp-metadata'
-              return "simp:///#{component.name}/#{component.binaryname}"
-            when 'enterprise-metadata'
-              return "simp-enterprise:///#{component.name}/#{component.binaryname}"
-            end
+        output = nil
+        output = compiled_url if component.compiled?
+        if output.nil?
+          if location.key?('url')
+            output = location['url']
+          elsif ['host', 'path', 'type'].all? { |value| location.key? value }
+            output = "https://#{location['host']}/#{location['path']}"
           end
         end
-        if location.key?('url')
-          location['url']
-        else
-          if location.key?('host')
-            if location.key?('path')
-              if location.key?('type')
-                "https://#{location['host']}/#{location['path']}"
-              end
-            end
-          end
-        end
+        output
       end
     end
   end

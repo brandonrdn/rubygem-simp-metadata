@@ -2,6 +2,7 @@ require 'uri'
 
 module Simp
   module Metadata
+    # FakeURI Class
     class FakeURI
       attr_accessor :scheme
       attr_accessor :host

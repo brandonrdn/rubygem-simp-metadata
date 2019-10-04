@@ -1,11 +1,11 @@
 module Simp
   module Metadata
-    class Puppet_versions
+    # Class for Puppet Versions
+    class PuppetVersions
       include Enumerable
       attr_accessor :engine
       attr_accessor :version
       attr_accessor :type
-      attr_accessor :metadata_version
 
       def initialize(engine, version = nil)
         @engine = engine
@@ -42,11 +42,9 @@ module Simp
               end
             else
               source.release(version).each do |element, data|
-                if element == 'puppet_versions'
-                  data.each do |version, _data|
-                    result[version] = true
-                  end
-                end
+                next unless element == 'puppet_versions'
+
+                data.each { |version, _data| result[version] = true }
               end
             end
           end
@@ -70,18 +68,15 @@ module Simp
               end
             else
               source.release(version).each do |element, data|
-                if element == 'puppet_versions'
-                  data.each do |version, data|
-                    result[version] = data.keys
-                  end
-                end
+                next unless element == 'puppet_versions'
+
+                data.each { |version, info| result[version] = info.keys }
               end
             end
           end
         end
         result.to_yaml
       end
-
     end
   end
 end

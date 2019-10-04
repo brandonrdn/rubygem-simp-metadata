@@ -2,33 +2,34 @@ require 'simp/media'
 
 module Simp
   module Media
+    # Media Engine Class
     class Engine
       attr_accessor :options
       attr_accessor :input
       attr_accessor :output
 
       def debug2(output)
-        Simp::Metadata.debug2(output)
+        Simp::Metadata::Debug.debug2(output)
       end
 
       def debug1(output)
-        Simp::Metadata.debug1(output)
+        Simp::Metadata::Debug.debug1(output)
       end
 
       def info(output)
-        Simp::Metadata.info(output)
+        Simp::Metadata::Debug.info(output)
       end
 
       def warning(output)
-        Simp::Metadata.warning(output)
+        Simp::Metadata::Debug.warning(output)
       end
 
       def error(output)
-        Simp::Metadata.error(output)
+        Simp::Metadata::Debug.error(output)
       end
 
       def critical(output)
-        Simp::Metadata.critical(output)
+        Simp::Metadata::Debug.critical(output)
       end
 
       def initialize(options = {})
@@ -55,20 +56,19 @@ module Simp
         @options = options
         raise 'input_type must be specified' if options[:input_type].nil?
         raise 'output_type must be specified' if options[:output_type].nil?
+
         @input = Module.const_get("Simp::Media::Type::#{@options[:input_type].capitalize}").new(options, self)
         @output = Module.const_get("Simp::Media::Type::#{@options[:output_type].capitalize}").new(options, self)
       end
 
       def run
-        # ToDo: Need to not create a target_directory if an input directory exists
+        # TODO: Need to not create a target_directory if an input directory exists
         if @output.target_directory.nil?
           target = Dir.mktmpdir('cachedir')
           @cleanup << target
-        else
-          target = @output.target_directory
         end
 
-        # ToDo: only set this if input is specified
+        # TODO: only set this if input is specified
         @input.input_directory = @options[:input]
 
         metadata = Simp::Metadata::Engine.new(nil, nil, @options)

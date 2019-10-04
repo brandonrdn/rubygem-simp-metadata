@@ -24,7 +24,7 @@ module Simp
 
           @engine, @root = get_engine(engine, options)
           if argv[0].nil?
-            Simp::Metadata.critical('filename must be specified')
+            Simp::Metadata::Debug.critical('filename must be specified')
             exit 3
           end
           data = File.read(argv[0])

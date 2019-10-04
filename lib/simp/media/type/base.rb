@@ -2,6 +2,7 @@ require 'open3'
 module Simp
   module Media
     module Type
+      # Media Base Class
       class Base
         attr_accessor :engine
         attr_accessor :options
@@ -38,7 +39,6 @@ module Simp
         def run(command)
           exitcode = nil
           Open3.popen3(command) do |_stdin, stdout, stderr, thread|
-            pid = thread.pid
             debug1(stdout.read.chomp)
             debug1(stderr.read.chomp)
             exitcode = thread.value

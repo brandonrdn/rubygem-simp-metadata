@@ -3,6 +3,7 @@ require 'open3'
 module Simp
   module Media
     module Type
+      # Media Internet Class
       class Internet < Simp::Media::Type::Base
         attr_accessor :options
 

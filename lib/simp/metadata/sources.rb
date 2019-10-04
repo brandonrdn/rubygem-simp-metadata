@@ -6,7 +6,8 @@ module Simp
   module Metadata
     # Set sources based on defaults and input
     class Sources
-      def initialize (edition = 'community', metadata_repos = {})
+      attr_accessor :sources
+      def initialize(edition = 'community', metadata_repos = {})
         @edition = edition
         @metadata_repos = metadata_repos
         @default_source_data = {}
@@ -18,32 +19,28 @@ module Simp
         update_sources
       end
 
-      def sources
-        @sources
-      end
-
       def enterprise_metadata_hash
-        { source_type: 'simp-metadata', authoritative: true,
+        { source_type: 'simp-metadata', authoritative: true, version: 'master',
           locations: [{ url: 'simp-enterprise:///enterprise-metadata?version=master&filetype=tgz',
-                        method: 'file', extract: true, primary: true }]}
+                        method: 'file', extract: true, primary: true }] }
       end
 
       def simp_metadata_hash
-        { source_type: 'simp-metadata', authoritative: true,
+        { source_type: 'simp-metadata', authoritative: true, branch: 'master',
           locations: [{ url: 'https://github.com/simp/simp-metadata',
-                        method: 'git', primary: true }]}
+                        method: 'git', primary: true }] }
       end
 
       def default_source_data
         data = case @edition
-                when 'enterprise'
-                  { sources: { enterprise_metadata: enterprise_metadata_hash,
-                               simp_metadata: simp_metadata_hash } }
-                when 'enterprise-only'
-                  { sources: { enterprise_metadata: enterprise_metadata_hash } }
-                else
-                  { sources: { simp_metadata: simp_metadata_hash } }
-                end
+               when 'enterprise'
+                 { sources: { enterprise_metadata: enterprise_metadata_hash,
+                              simp_metadata: simp_metadata_hash } }
+               when 'enterprise-only'
+                 { sources: { enterprise_metadata: enterprise_metadata_hash } }
+               else
+                 { sources: { simp_metadata: simp_metadata_hash } }
+               end
         @default_source_data = data[:sources]
       end
 
@@ -58,7 +55,7 @@ module Simp
               method = 'file'
               extract = true
             end
-            repo_symbol = repo_name.sub('-','_').to_sym
+            repo_symbol = repo_name.sub('-', '_').to_sym
             next unless @default_source_data.key?(repo_symbol)
 
             @default_source_data[repo_symbol][:locations][0][:url] = url

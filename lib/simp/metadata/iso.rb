@@ -1,15 +1,14 @@
 module Simp
   module Metadata
+    # Class for ISO information
     class Iso
       include Enumerable
-      attr_accessor :engine
-      attr_accessor :release_version
+      attr_accessor :engine, :release_version, :name
 
       def initialize(engine, version, name)
         @engine = engine
         @name = name
         @release_version = version
-        @platform = platform
       end
 
       def to_s
@@ -21,9 +20,10 @@ module Simp
       end
 
       def iso_source
-        retval = engine.sources[:bootstrap_metadata]
+        retval = engine.sources[:simp_metadata]
         engine.sources.each do |_name, source|
           next if source.isos.nil?
+
           if source.isos.key?(name)
             retval = source
             break
@@ -32,44 +32,42 @@ module Simp
         retval
       end
 
-      def get_from_iso
-        iso_source.isos[name]
+      def fetch_from_iso(item)
+        iso_source.isos[name][item.to_s]
       end
 
       def size
-        get_from_iso[:size]
+        fetch_from_iso(:size)
       end
 
       def checksum
-        get_from_iso[:checksum]
+        fetch_from_iso(:checksum)
       end
 
       def primary
-        get_from_iso[:primary]
+        fetch_from_iso(:primary)
       end
 
       def platform
-        get_from_iso[:platform]
+        fetch_from_iso(:platform)
       end
 
       def dependencies
         result = {}
         engine.sources.each do |_name, source|
           next if source.isos.nil?
+
           source.isos.each do |image, data|
             next unless data[:platform] == platform
+
             result[image] = true
           end
         end
-        if result.keys.size > 0
-          result.keys
-        else
-          nil
-        end
+        result.keys unless result.empty?
       end
 
       def keys
-        %w(name size checksum platform primary dependencies)
+        %w[name size checksum platform primary dependencies]
       end
 
       def [](index)
@@ -81,7 +79,6 @@ module Simp
           yield key, self[key]
         end
       end
-
     end
   end
 end

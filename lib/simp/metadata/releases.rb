@@ -2,6 +2,7 @@ require 'simp/metadata/release'
 
 module Simp
   module Metadata
+    # Class to manage SIMP releases on upstream repos
     class Releases
       include Enumerable
       attr_accessor :engine
@@ -28,7 +29,7 @@ module Simp
           if @release
             result[@release] = true if source.releases.key?(@release)
           else
-          source.releases.keys.each { |name| result[name] = true }
+            source.releases.keys.each { |name| result[name] = true }
           end
         end
         result.keys
@@ -48,11 +49,9 @@ module Simp
         end
       end
 
-      def create(destination, source = 'master')
+      def create(dest, source = 'master')
         engine.sources.each do |_name, metadata_source|
-          if metadata_source.writable?
-            metadata_source.create_release(destination, source)
-          end
+          metadata_source.create_release(dest, source) if metadata_source.writable?
         end
       end
     end

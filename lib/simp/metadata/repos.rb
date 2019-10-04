@@ -1,5 +1,6 @@
 module Simp
   module Metadata
+    # Default Repos Class to parse sources
     class Repos
       include Enumerable
       attr_accessor :engine, :edition, :args, :sources
@@ -35,14 +36,6 @@ module Simp
         end
         result.keys
       end
-
-      #def create(name, settings = {})
-      #  unless key?(name)
-      #    engine.writable_source.sources[name] = settings
-      #    engine.writable_source.dirty = true
-      #  end
-      #end
-
     end
   end
 end

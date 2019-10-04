@@ -1,11 +1,11 @@
 module Simp
   module Metadata
+    # SIMP Platform Class
     class Platform
       include Enumerable
       attr_accessor :release_version
       attr_accessor :engine
       attr_accessor :version
-      attr_accessor :metadata_version
 
       def initialize(engine, version, platform)
         @engine = engine
@@ -25,10 +25,9 @@ module Simp
         hash = {}
         engine.sources.each do |_name, source|
           next if source.isos.nil?
-          source.isos.each do |iso,data|
-            if data[:platform] == name
-            hash[iso] = data
-          end
+
+          source.isos.each do |iso, data|
+            hash[iso] = data if data[:platform] == name
           end
         end
         hash.keys
@@ -51,7 +50,6 @@ module Simp
           yield key, self[key]
         end
       end
-
     end
   end
 end

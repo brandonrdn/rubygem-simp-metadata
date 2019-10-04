@@ -1,5 +1,6 @@
 module Simp
   module Metadata
+    # Class for build Base ISOs
     class Isos
       include Enumerable
       attr_accessor :engine
@@ -31,14 +32,13 @@ module Simp
 
       def keys
         result = {}
-          engine.sources.each do |_name, source|
-            source.isos.each do |name, _data|
-              result[name] = true
-            end
+        engine.sources.each do |_name, source|
+          source.isos.each do |name, _data|
+            result[name] = true
+          end
         end
         result.keys
       end
-
     end
   end
 end

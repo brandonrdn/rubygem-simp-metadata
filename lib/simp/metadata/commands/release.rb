@@ -53,8 +53,8 @@ module Simp
           begin
             engine.releases[release].add_component(component, new_data)
           rescue StandardError => e
-            Simp::Metadata.critical(e.message)
-            Simp::Metadata.backtrace(e.backtrace)
+            Simp::Metadata::Debug.critical(e.message)
+            Simp::Metadata::Debug.backtrace(e.backtrace)
           end
           # critical("Must include at least one setting in hash form. i.e. {'tag' => '1.2.3'}")[0]) unless argv[2]
           # critical("Must specify Release from which to remove component")[0]) unless options[:release]
@@ -68,7 +68,7 @@ module Simp
           @engine, @root = get_engine(engine, options)
           release = options[:release]
           component = argv[2]
-          abort(Simp::Metadata.critical("Must specify Release to remove component")[0]) unless options[:release]
+          abort(Simp::Metadata::Debug.critical("Must specify Release to remove component")[0]) unless options[:release]
           engine.releases[release].delete_component(component)
         end
 
@@ -77,16 +77,13 @@ module Simp
           case sub_subcommand
           when '-h', '--help', 'help'
             defaults(argv) { |opts, _options| opts.banner = 'Usage: simp-metadata release component [ add | delete ]' }
+            # opts.banner << '    Add or delete component for the specified release.'
           when 'add'
             component_add
           when 'delete'
             component_delete
           else
-            defaults(argv) do |opts, _options|
-              opts.banner = 'Usage: simp-metadata release component [ add | delete ]'
-              opts.banner << '    Add or delete component for the specified release.'
-            end
-            abort(Simp::Metadata.critical("Invalid subcommand: expects 'component add' or 'component delete'`")[0])
+            Simp::Metadata::Debug.abort("Invalid subcommand: expects 'component add' or 'component delete'`")
           end
         end
 
@@ -96,11 +93,7 @@ module Simp
             opts.banner += "\n-Outputs valid platforms for specified release."
           end
           @engine, @root = get_engine(engine, options)
-          if options[:metadata_version] == 'v1'
-            Simp::Metadata.critical('Platform data is not available for metadata version 1')
-          else
-            puts engine.releases[options[:release]].platforms.keys.join("\n")
-          end
+          puts engine.releases[options[:release]].platforms.keys.join("\n")
         end
 
         def puppet_versions
@@ -109,11 +102,7 @@ module Simp
             opts.banner += "\n-Outputs Puppet versions for specified release."
           end
           @engine, @root = get_engine(engine, options)
-          if options[:metadata_version] == 'v1'
-            Simp::Metadata.critical('Puppet versions are not available for metadata version 1')
-          else
-            puts engine.releases[options[:release]].puppet_versions.output
-          end
+          puts engine.releases[options[:release]].puppet_versions.output
         end
 
         def isos
@@ -122,17 +111,13 @@ module Simp
             opts.banner += "\n-Creates a list of base ISOs that this version of SIMP can utilize."
           end
           @engine, @root = get_engine(engine, options)
-          if options[:metadata_version] == 'v1'
-            Simp::Metadata.critical('ISO data is not available for metadata version 1')
-          else
-            platform = argv[1]
-            output = if platform
-                       engine.releases[options[:release]].platforms[platform].images
-                     else
-                       engine.releases[options[:release]].isos.keys
-                     end
-            puts output
-          end
+          platform = argv[1]
+          output = if platform
+                     engine.releases[options[:release]].platforms[platform].images
+                   else
+                     engine.releases[options[:release]].isos.keys
+                   end
+          puts output
         end
 
         def puppetfile
@@ -172,7 +157,7 @@ module Simp
           public_send(subcommand)
           save
         rescue RuntimeError => e
-          Simp::Metadata.critical(e.message)
+          Simp::Metadata::Debug.critical(e.message)
           exit 5
         end
       end

@@ -2,6 +2,7 @@ require 'fileutils'
 module Simp
   module Media
     module Type
+      # Media Local Class
       class Local < Simp::Media::Type::Base
         attr_writer :input_directory
 
@@ -16,7 +17,7 @@ module Simp
           when 'String'
             retval[:path] = "#{options[:input]}/simp/metadata/#{component.name}"
           when 'Simp::Metadata::Component'
-            # ToDo: Add manifest.yaml support so we don't need this logic at all
+            # TODO: Add manifest.yaml support so we don't need this logic at all
             subdirectory = case component.component_type
                            when 'documentation'
                              'simp/docs'

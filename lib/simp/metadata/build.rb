@@ -5,11 +5,12 @@ require 'simp/metadata/platforms'
 require 'ruby-progressbar'
 require 'find'
 require 'fileutils'
+require_relative "#{__dir__}/build_handler.rb"
 
 module Simp
   module Metadata
     # Build methods for simp-metadata build command
-    class Build < BuildHandler
+    class Build < Simp::Metadata::BuildHandler
       include Enumerable
       attr_accessor :engine
       attr_accessor :release_version
@@ -76,7 +77,7 @@ module Simp
       def verify_commands
         commands = %w[isoinfo createrepo]
         commands.each do |command|
-          abort(Simp::Metadata.critical("#{command} is not installed")[0]) unless command?(command)
+          abort(Simp::Metadata::Debug.critical("#{command} is not installed")[0]) unless command?(command)
         end
       end
 
@@ -108,13 +109,14 @@ module Simp
         FileUtils.makedirs(dest)
 
         # Download if it exists
+        require 'pry'; require 'pry-byebug'; binding.pry
         component.download(dest)
         return if File.exist?("#{dest}/#{rpm_name}")
 
         # Build if needed
         component.build(dest) unless File.exist?("#{dest}/#{rpm_name}")
         FileUtils.cp("#{dest}/#{rpm_name}", "#{build_dir}/unsigned_rpms")
-        Simp::Metadata.critical("#{rpm_name} NOT FOUND") unless File.exist?("#{dest}/#{rpm_name}")
+        Simp::Metadata::Debug.critical("#{rpm_name} NOT FOUND") unless File.exist?("#{dest}/#{rpm_name}")
       end
 
       def overlay_tarball_build
@@ -155,7 +157,7 @@ module Simp
 
         exitcode = Simp::Metadata.run("tar -cvzf #{tarball_dir}/#{overlay_tarball_name} ./")
         unless exitcode == 0
-          abort(Simp::Metadata.critical("Failed to create Overlay Tarball for SIMP #{release_version}")[0])
+          abort(Simp::Metadata::Debug.critical("Failed to create Overlay Tarball for SIMP #{release_version}")[0])
         end
         Dir.chdir(go_back)
       end
@@ -183,14 +185,14 @@ module Simp
       def validate_size(iso)
         local = File.size("#{iso_cache}/#{iso}").to_s
         compare = engine.isos[iso].size
-        abort(Simp::Metadata.warning("#{iso}: Size mismatch. Expected: #{compare}")[0]) unless local.eql?(compare)
+        Simp::Metadata::Debug.abort("#{iso}: Size mismatch. Expected: #{compare}") unless local.eql?(compare)
       end
 
       def validate_checksum(iso)
         sha256 = Digest::SHA256.file "#{iso_cache}/#{iso}"
         local = sha256.to_s
         compare = engine.isos[iso].checksum
-        abort(Simp::Metadata.warning("#{iso}: Sha256 mismatch. Expected: #{compare}")[0]) unless local.eql?(compare)
+        Simp::Metadata::Debug.abort("#{iso}: Sha256 mismatch. Expected: #{compare}") unless local.eql?(compare)
       end
 
       def validate_rpm(rpm, clean = true)
@@ -201,7 +203,7 @@ module Simp
             error += ', removing'
             FileUtils.rm(rpm) if File.exist?(rpm)
           end
-          Simp::Metadata.critical(error)
+          Simp::Metadata::Debug.critical(error)
         end
       end
 
@@ -409,7 +411,7 @@ module Simp
 
         errmsg = ['Error: REPOCLOSURE FAILED:']
         errmsg << [output]
-        abort(Simp::Metadata.critical(errmsg.join("\n"))) if !$CHILD_STATUS.success? || (output =~ /unresolved/)
+        Simp::Metadata::Debug.abort(errmsg.join("\n")) if !$CHILD_STATUS.success? || (output =~ /unresolved/)
         Dir.chdir(currentdir)
       end
 
@@ -435,23 +437,20 @@ module Simp
           begin
             FileUtils.copy "#{dest}/#{file}", "#{build_dir}/packages"
           rescue StandardError => e
-            Simp::Metadata.critical(e.message)
-            Simp::Metadata.backtrace(e.backtrace)
+            Simp::Metadata::Debug.critical(e.message)
+            Simp::Metadata::Debug.backtrace(e.backtrace)
           end
         end
       end
 
       def iso_build(build_iso)
         @iso = build_iso
-
         # Skip ISO if it doesn't match specified build platform
-        #next if build_distribution && !platform.include?(build_distribution)
-        #next if build_version && (el_version != build_version)
+        # next if build_distribution && !platform.include?(build_distribution)
+        # next if build_version && (el_version != build_version)
 
-        if File.exist?("#{iso_dir}/#{iso_name}")
-          puts "### SIMP ISO #{iso_name} already exists! Not building for existing ISO"
-         # next
-        end
+        # Check if ISO exists
+        iso_check
 
         stage_header("Starting build for #{platform}")
 
@@ -467,7 +466,7 @@ module Simp
 
         # Check for ISO dependencies
         stage_header("Checking Dependencies for ISO #{iso}")
-        isos = [build_iso] + dependency_check(build_iso)
+        isos = [build_iso] + iso_dependencies(build_iso)
 
         # Validate Base ISOs
         stage_header("Validating Base ISOs")
@@ -480,12 +479,7 @@ module Simp
         # Add Overlay tarball
         stage_header("Adding SIMP Overlay Tarball for SIMP #{release_version}")
 
-        build_tarball = true
-        extract_dir = nil
-        if options[:overlay_tarball] && File.exist?("#{tar_cache}/#{overlay_tarball_name}")
-          extract_dir = tar_cache
-          build_tarball = false
-        end
+        build_tarball, extract_dir = tarball_check
 
         # Build Tarball if  needed
         overlay_tarball_build if build_tarball
@@ -496,35 +490,21 @@ module Simp
 
         # Grab necessary packages
         stage_header("Downloading Packages")
-
         grab_packages
 
         # Copy noarch to x86_64
-        x86_64_dir = "#{extract_dir}/SIMP/x86_64"
-        FileUtils.makedirs x86_64_dir.to_s unless File.directory?(x86_64_dir)
-        rpms = Dir.glob(File.join("#{extract_dir}/SIMP/noarch", "**", "*rpm"))
-        rpms.each { |rpm| FileUtils.cp rpm, x86_64_dir }
+        rpm_copy("#{extract_dir}/SIMP/noarch", "#{extract_dir}/SIMP/x86_64")
 
         # Purge package folders
         stage_header("Pruning unneeded packages")
         package_purge("#{extract_dir}/Packages")
 
-        # Createrepo
-        dirs = [
-          # "#{extract_dir}/SIMP/noarch",
-          "#{extract_dir}/SIMP/x86_64"
-          # "#{extract_dir}/Packages"
-        ]
+        # Createrepo ( "#{extract_dir}/SIMP/noarch", "#{extract_dir}/Packages")
+        dirs = ["#{extract_dir}/SIMP/x86_64"]
         dirs.each { |dir| Dir.chdir(dir) { `createrepo .` } }
 
-        if preserve
-          dirs.each do |dir|
-            path = dir.split("#{extract_dir}/")[-1]
-            FileUtils.makedirs("#{build_rpm_dir}/#{path}")
-            rpms = Dir.glob(File.join(dir, '*.rpm'))
-            rpms.each { |rpm| FileUtils.copy rpm, "#{build_rpm_dir}/#{path}" }
-          end
-        end
+        # Preserve Build components
+        build_preserve(dirs) if preserve
 
         # Repoclosure
         stage_header("Verifying dependencies")
@@ -554,7 +534,7 @@ module Simp
           verify_commands
           buildable_isos.each { |build_iso| iso_build(build_iso) }
         else
-          abort(Simp::Metadata.critical("Invalid build type specified. Expected: tarball or iso")[0])
+          abort(Simp::Metadata::Debug.critical("Invalid build type specified. Expected: tarball or iso")[0])
         end
       end
     end

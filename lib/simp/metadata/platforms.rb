@@ -1,11 +1,11 @@
 module Simp
   module Metadata
+    # Class for SIMP Base Platforms
     class Platforms
       include Enumerable
       attr_accessor :engine
       attr_accessor :version
       attr_accessor :type
-      attr_accessor :metadata_version
 
       def initialize(engine, version = nil)
         @engine = engine
@@ -46,10 +46,10 @@ module Simp
               end
             else
               source.release(version).each do |element, data|
-                if element == 'platforms'
-                  data.each do |platform, _data|
-                    result[platform] = true
-                  end
+                data.each do |platform, _data|
+                  next unless element == 'platforms'
+
+                  result[platform] = true
                 end
               end
             end
@@ -57,8 +57,6 @@ module Simp
         end
         result.keys
       end
-
-
     end
   end
 end

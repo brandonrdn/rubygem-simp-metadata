@@ -1,6 +1,9 @@
+require_all "#{__dir__}"
+
 module Simp
   module Metadata
-    class Repo < BuildHandler
+    # Class to grab specific Repo details
+    class Repo < Simp::Metadata::BuildHandler
       include Enumerable
       attr_accessor :engine
       attr_accessor :sources
@@ -19,8 +22,16 @@ module Simp
         @name.to_s
       end
 
+      def path_name
+        name.tr('_', '-')
+      end
+
       def output_filename
-        name.sub('_','-')
+        name.sub('_', '-')
+      end
+
+      def binaryname
+        "#{output_filename}-#{version}.#{extension}"
       end
 
       def data
@@ -39,7 +50,7 @@ module Simp
       end
 
       def keys
-        %w(authoritative extension extract method primary source_type url)
+        %w[authoritative extension extract method primary source_type url]
       end
 
       def [](index)
@@ -82,22 +93,18 @@ module Simp
 
       def primary_source
         value = {}
-        locations_array.each do |location|
-          if location[:primary]
-            value = location
-          end
-        end
+        locations_array.each { |location| value = location if location[:primary] }
         value
       end
 
       def version
-        ''
+        get_from_data('version') || ''
       end
 
       def locations
         {
-            :locations => locations_array,
-            :primary_source => primary_source,
+          locations: locations_array,
+          primary_source: primary_source
         }
       end
 
@@ -112,7 +119,6 @@ module Simp
       def authoritative
         get_from_data('authoritative')
       end
-
     end
   end
 end

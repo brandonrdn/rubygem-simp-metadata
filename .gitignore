@@ -11,3 +11,6 @@ data
 /build
 *.gem
 /.idea/
+/backup
+/doc
+/build

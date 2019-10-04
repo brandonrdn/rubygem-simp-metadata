@@ -1,5 +1,6 @@
 module Simp
   module Metadata
+    # Build Info Class
     class Buildinfo
       include Enumerable
       attr_accessor :type
@@ -7,11 +8,11 @@ module Simp
 
       def initialize(component, type)
         @type = type
-        @source = component
+        @component = component
       end
 
       def keys
-        %w(type build_method)
+        %w[type build_method]
       end
 
       def [](index)
@@ -25,7 +26,7 @@ module Simp
       end
 
       def fetch_data
-        source.fetch_data('buildinfo')
+        component.fetch_data('buildinfo')
       end
 
       def method_defaults
@@ -34,20 +35,11 @@ module Simp
 
       def build_method
         buildinfo = fetch_data
-        if buildinfo.nil?
-          retval = method_defaults[type][:build_method]
+        if buildinfo && buildinfo[type].key?(:buildinfo)
+          buildinfo[type][:build_method]
         else
-          if buildinfo.key?(type)
-            retval = if buildinfo[type].key?(:build_method)
-                       buildinfo[type][:build_method]
-                     else
-                       method_defaults[type][:build_method]
-                     end
-          else
-            retval = method_defaults[type][:build_method]
-          end
+          method_defaults[type][:build_method]
         end
-        retval
       end
     end
   end

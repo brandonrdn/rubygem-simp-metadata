@@ -6,7 +6,6 @@ require 'pp'
 require 'json'
 
 command, *args = ARGV
-
 engine = Simp::Metadata::Engine.new
 
 def rest_request(request, method = 'GET', _body = nil)
@@ -24,7 +23,7 @@ def rest_request(request, method = 'GET', _body = nil)
   when 'DELETE'
     request = Net::HTTP::Delete.new(uri)
   else
-    exit(Simp::Metadata.error("Unrecognized URI request #{method}")[0])
+    exit(Simp::Metadata::Debug.error("Unrecognized URI request #{method}")[0])
   end
   req_options = { use_ssl: uri.scheme == 'https' }
   response = Net::HTTP.start(uri.hostname, uri.port, req_options) { |http| http.request(request) }
@@ -45,8 +44,8 @@ when 'generate'
     parser.on('-p', '--puppetfile', 'Generate puppetfile') { |puppetfile| options.puppetfile = puppetfile }
     parser.on('-r', '--release=MANDATORY', 'Release to generate') { |release| options.release = release }
   end
-  parser.parse!(args)
-  exit(Simp::Metadata.critical('must specify -r or --release')[0]) if options.release.nil?
+  option_parser.parse!(args)
+  exit(Simp::Metadata::Debug.critical('must specify -r or --release')[0]) if options.release.nil?
 
   if options.puppetfile
     paths = engine.list_components_with_data(options.release)
@@ -84,8 +83,8 @@ when 'mirror'
   begin
     Dir.mkdir(options.destination)
   rescue StandardError => e
-    Simp::Metadata.critical(e.message)
-    Simp::Metadata.backtrace(e.backtrace)
+    Simp::Metadata::Debug.critical(e.message)
+    Simp::Metadata::Debug.backtrace(e.backtrace)
   end
 
   Dir.chdir(options.destination) do

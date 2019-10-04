@@ -1,6 +1,7 @@
 require 'simp/metadata/components'
 module Simp
   module Metadata
+    # Class for Release information
     class Release
       attr_accessor :engine
       attr_accessor :version
@@ -11,8 +12,8 @@ module Simp
         @options = options
       end
 
-      def components(type = nil)
-        Simp::Metadata::Components.new(engine, @options[:component], version, type)
+      def components
+        Simp::Metadata::Components.new(engine, @options[:component], version)
       end
 
       def platforms
@@ -20,7 +21,7 @@ module Simp
       end
 
       def puppet_versions
-        Simp::Metadata::Puppet_versions.new(engine, version)
+        Simp::Metadata::PuppetVersions.new(engine, version)
       end
 
       def isos
@@ -49,10 +50,8 @@ module Simp
           contents << "moduledir 'src/assets'"
           contents << ''
           components.each do |component|
-            if component.component_type == 'asset'
-              contents << puppetfile_component(component, options)
-            end
-            if component.component_type == 'rubygem'
+            case component.component_type
+            when 'asset', 'rubygem', 'rpm'
               contents << puppetfile_component(component, options)
             end
           end
@@ -60,9 +59,7 @@ module Simp
           contents << ''
         end
         components.each do |component|
-          if component.component_type == 'puppet-module'
-            contents << puppetfile_component(component, options)
-          end
+          contents << puppetfile_component(component, options) if component.component_type == 'puppet-module'
         end
         contents.join("\n")
       end
@@ -73,30 +70,23 @@ module Simp
 
       def diff(compare_release, attribute)
         diff = {}
-
         current_hash = {}
         compare_hash = {}
         components.each do |comp|
-          self_component_hash = {}
+          self_comp_hash = {}
           comp.each do |key, value|
-            if !attribute.nil?
-              self_component_hash[key] = value.to_s if key.to_s == attribute
-            else
-              self_component_hash[key] = value.to_s
-            end
-            current_hash[comp.name] = self_component_hash
+            self_comp_hash[key] = value.to_s
+            self_comp_hash.delete_if { |k, _v| k.to_s == attribute }
+            current_hash[comp.name] = self_comp_hash
           end
         end
 
         compare_release.sources.each do |comp|
-          self_component_hash = {}
+          self_comp_hash = {}
           comp.each do |key, value|
-            if !attribute.nil?
-              self_component_hash[key] = value.to_s if key.to_s == attribute
-            else
-              self_component_hash[key] = value.to_s
-            end
-            compare_hash[comp.name] = self_component_hash
+            self_comp_hash[key] = value.to_s
+            self_comp_hash.delete_if { |k, _v| k.to_s == attribute }
+            compare_hash[comp.name] = self_comp_hash
           end
         end
         current_hash.each do |comp, hash|
@@ -104,6 +94,7 @@ module Simp
           hash.each do |key, value|
             next unless compare_hash.key?(comp)
             next unless compare_hash[comp][key] != value
+
             diff_hash[key] = {
               'original' => value.to_s,
               'changed' => (compare_hash[comp][key]).to_s
@@ -114,9 +105,13 @@ module Simp
         diff
       end
 
-      def add_component(component,hash)
-        abort(Simp::Metadata.critical("#{component} is not a valid SIMP Component. Please use `simp-metadata component add` if this is a valid component")[0]) unless engine.sources.key?(component)
-        abort(Simp::Metadata.critical("#{component} is already part of SIMP #{version}")[0]) if components.key?(component)
+      def add_component(component, hash)
+        unless engine.sources.key?(component)
+          Simp::Metadata::Debug.warning("#{component} is not a recognized SIMP Component")
+          Simp::Metadata::Debug.warning("Please use `simp-metadata component add` if this is a valid component")
+          Simp::Metadata::Debug.abort("#{component} is not a recognized SIMP Component.")
+        end
+        Simp::Metadata::Debug.abort("#{component} is already part of SIMP #{version}") if components.key?(component)
         engine.writable_source.releases[version][component] = hash
         engine.writable_source.dirty = true
       end
@@ -127,7 +122,6 @@ module Simp
           engine.writable_source.dirty = true
         end
       end
-
     end
   end
 end

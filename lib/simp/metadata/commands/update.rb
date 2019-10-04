@@ -31,22 +31,22 @@ module Simp
                      end
 
             unless object.methods.include?(setting.to_sym)
-              Simp::Metadata.critical("#{setting} is not a valid setting")
+              Simp::Metadata::Debug.critical("#{setting} is not a valid setting")
               exit 7
             end
 
             begin
               object.send("#{setting}=".to_sym, value)
             rescue NoMethodError => e
-              Simp::Metadata.critical(e.message)
-              Simp::Metadata.backtrace(e.backtrace)
-              Simp::Metadata.critical("#{setting} is a read-only setting")
+              Simp::Metadata::Debug.critical(e.message)
+              Simp::Metadata::Debug.backtrace(e.backtrace)
+              Simp::Metadata::Debug.critical("#{setting} is a read-only setting")
               exit 6
             end
 
             @engine.save(([:simp_metadata, 'update'] + argv).join(' ')) if @root
           rescue RuntimeError => e
-            Simp::Metadata.critical(e.message)
+            Simp::Metadata::Debug.critical(e.message)
             exit 5
           end
         end

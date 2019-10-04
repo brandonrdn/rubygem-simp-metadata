@@ -1,4 +1,4 @@
-# ToDo: Dynamically load all files
+# TODO: Dynamically load all files
 require 'require_all'
 require 'simp/metadata/build_handler'
 require_all "#{__dir__}/commands"

@@ -1,15 +1,14 @@
 module Simp
   module Metadata
+    # Class for SIMP Components
     class Components
       include Enumerable
       attr_accessor :engine
       attr_accessor :version
-      attr_accessor :type
 
-      def initialize(engine, component = nil, version = nil, type = nil)
+      def initialize(engine, component = nil, version = nil)
         @engine = engine
         @version = version
-        @type = type
         @component = component
       end
 
@@ -28,6 +27,14 @@ module Simp
       end
 
       def [](index)
+        if version
+          unless engine.releases[version].components.key?(index)
+          end
+        else
+          unless engine.components.key?(index)
+            Simp::Metadata::Debug.abort("Test2")
+          end
+        end
         Simp::Metadata::Component.new(engine, index, version)
       end
 
@@ -39,29 +46,17 @@ module Simp
         result = {}
         if version.nil?
           engine.sources.each do |_source_name, source_data|
-            if @component
-              result[@component] = true if source_data.components.key?(@component)
-            else
-              source_data.components.keys.each { |name| result[name] = true }
-            end
+            source_data.components.keys.each { |name| result[name] = true }
           end
         else
           engine.sources.each do |_name, source|
             if source.releases.key?(version)
-              if @component
-                result[@component] = true if source.releases[version].key?(@component)
-              else
-                source.releases[version].each { |component, _data| result[component] = true }
-              end
+              source.releases[version].each { |component, _data| result[component] = true }
             else
               source.release(version).each do |element, data|
-                if element == 'components'
-                  if @component
-                    result[@component] = true if data.key?(@component)
-                  else
-                    data.each { |component, _data| result[component] = true }
-                  end
-                end
+                next unless element == 'components'
+
+                data.each { |component, _data| result[component] = true }
               end
             end
           end
@@ -75,7 +70,6 @@ module Simp
           engine.writable_source.dirty = true
         end
       end
-
     end
   end
 end

@@ -18,11 +18,10 @@ module Simp
           @engine, @root = get_engine(engine, options)
 
           begin
-           # require 'pry'; require 'pry-byebug'; binding.pry
             @engine.releases.create(argv[1], argv[0])
             @engine.save(([:simp_metadata, 'clone'] + argv).join(' ')) if @root
           rescue RuntimeError => e
-            Simp::Metadata.critical(e.message)
+            Simp::Metadata::Debug.critical(e.message)
             exit 5
           end
         end

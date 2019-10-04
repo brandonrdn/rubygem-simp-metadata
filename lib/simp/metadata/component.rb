@@ -1,6 +1,8 @@
+require_relative "#{__dir__}/build_handler.rb"
 module Simp
   module Metadata
-    class Component < BuildHandler
+    # Class used to grab component information, both static and release-based
+    class Component < Simp::Metadata::BuildHandler
       include Enumerable
       attr_accessor :engine
       attr_accessor :release_version
@@ -9,6 +11,15 @@ module Simp
         @engine = engine
         @name = name
         @release_version = version
+        if @release_version
+          unless engine.releases[@release_version].components.key?(@name)
+            Simp::Metadata::Debug.critical("Component #{@name} does not exist in release #{@release_version}")
+          end
+        else
+          unless engine.components.key?(@name)
+            Simp::Metadata::Debug.critical("Component #{@name} does not exist")
+          end
+        end
       end
 
       def to_s
@@ -20,22 +31,32 @@ module Simp
         when 'component'
           @name.to_s
         when 'puppetfile'
-          if component_type == 'rubygem'
-            "rubygem-#{@name.to_s.tr('-', '_')}"
-          elsif component_type == 'puppet-module'
-            @name.gsub(/pupmod-/, '').to_s
+          if module_name
+            module_name
           else
-            @name.to_s
+            if component_type == 'rubygem'
+              "rubygem-#{@name.to_s.tr('-', '_')}"
+            elsif component_type == 'puppet-module'
+              @name.gsub(/pupmod-/, '').to_s
+            else
+              @name.to_s
+            end
           end
         else
-          abort(Simp::Metadata.critical("Expected type to be 'component' or 'puppetfile'")[0])
+          puts type
+          Simp::Metadata::Debug.abort("Expected type to be 'component' or 'puppetfile'")
         end
+      end
+
+      def options
+        @engine.options
       end
 
       def component_source
         retval = engine.sources[:simp_metadata]
         engine.sources.each do |_name, source|
           next if source.components.nil?
+
           if source.components.key?(name)
             retval = source
             break
@@ -47,70 +68,53 @@ module Simp
       def release_source
         retval = engine.sources[:simp_metadata]
         engine.sources.each do |_name, source|
-          if source.releases.key?(release_version)
-            if source.releases[release_version].key?(name)
-              retval = source
-              break
-            end
-          else
-            if source.release(release_version).key?(name)
-              retval = source
-              break
-            end
+          if source.release(release_version).key?(name)
+            retval = source
+            break
           end
         end
         retval
       end
 
-      # Will be used to grab method based data in the future, rather
-      # then calling get_from_release or get_from_component directly,
-      #
-      # For now, just use it in Simp::Metadata::Buildinfo
       def fetch_data(item)
-        component = get_from_component
-        release = get_from_release
-        if release.key?(item)
-          release[item]
+        component = grab_from_component
+        release = grab_from_release
+        if !release || !component
+          nil
         else
-          component[item]
+          if release.key?(item)
+            release[item]
+          else
+            component[item]
+          end
         end
       end
 
-      def get_from_component
+      def grab_from_component
         component_source.components[name]
       end
 
-      def get_from_release
-        retval = {}
-        if release_source.releases.key?(release_version)
-          if release_source.releases[release_version].key?(name)
-            retval = release_source.releases[release_version][name]
-          end
+      def grab_from_release
+        if release_source.release(release_version).empty?
+          {}
         else
-          if release_source.release(release_version).key?(name)
-            retval = release_source.release(release_version)[name]
-          end
+          release_source.release(release_version)[name] if release_source.release(release_version).key?(name)
         end
-        retval
       end
 
       def type
-        get_from_component['type']
+        fetch_data('type')
       end
 
       def extension
         if real_extension.nil?
           case component_type
-          when 'simp-metadata'
+          when 'simp-metadata', 'puppet-module'
             'tgz'
-          when 'logstash-filter'
-            'gem'
-          when 'rubygem'
+          when 'logstash-filter', 'rubygem'
             'gem'
           when 'grafana-plugin'
             'zip'
-          when 'puppet-module'
-            'tgz'
           else
             ''
           end
@@ -120,11 +124,45 @@ module Simp
       end
 
       def keys
-        %w(component_type authoritative asset_name extension format module_name type url method extract branch tag ref version release_source component_source target revision)
+        %w[
+          component_type authoritative package_name module_name extension format module_name type
+          url method extract branch tag ref version target revision rpm_name
+        ]
+      end
+
+      def data_hash
+        data_keys = keys - ['release_source','component_source']
+        result = {}
+        data_keys.each do |key|
+          value = self[key]
+          result[key.to_s] = value.to_s
+        end
+        result
+      end
+
+      def data_array
+        result = []
+        data_hash.each do |_key, value|
+          result.push(value)
+        end
+        result
+      end
+
+      def key_gsub(key)
+        if keys.include?(key)
+          key
+        else
+          if keys.include?(key.gsub('-','_'))
+            key.gsub('-','_')
+          else
+            Simp::Metadata::Debug.abort("Unrecognized Component key: #{key}")
+          end
+        end
       end
 
       def [](index)
-        send index.to_sym
+        item = key_gsub(index)
+        send item.to_sym
       end
 
       def each
@@ -134,28 +172,25 @@ module Simp
       end
 
       def real_extension
-        get_from_component['extension']
-      end
-
-      def real_asset_name
-          get_from_component['component-name']
+        fetch_data('extension')
       end
 
       def module_name
-        asset_name
+        fetch_data('module-name') || @name
       end
 
-      def asset_name
-        if real_asset_name.nil?
+      def package_name
+        if fetch_data('package-name')
+          fetch_data('package-name')
+        else
           case component_type
           when 'puppet-module'
-            split = name.split('-')
-            split[split.size - 1]
+            @name =~ /pupmod-*/ ? @name : "pupmod-#{@name}"
+          when 'rubygem'
+            @name =~ /rubygem-*/ ? @name : "rubygem-#{@name}"
           else
-            name
+            @name
           end
-        else
-          real_asset_name
         end
       end
 
@@ -192,36 +227,36 @@ module Simp
       end
 
       def locations
-        # ToDo: Allow manifest.yaml to override locations
-        # ToDo: Use primary_source and mirrors here if locations is empty
+        # TODO: Allow manifest.yaml to override locations
+        # TODO: Use primary_source and mirrors here if locations is empty
         infohash = {
-            'locations' => get_from_component['locations'],
-            'primary_source' => get_from_component['primary_source'],
-            'mirrors' => get_from_component['mirrors']
+          'locations' => fetch_data('locations'),
+          'primary_source' => fetch_data('primary_source'),
+          'mirrors' => fetch_data('mirrors')
         }
         Simp::Metadata::Locations.new(infohash, self)
       end
 
-      # ToDo: Generate a filename, and output file type; ie, directory or file
+      # TODO: Generate a filename, and output file type; ie, directory or file
 
       def format
-        get_from_component['format']
+        fetch_data('format')
       end
 
       def component_type
-        get_from_component['component-type']
+        fetch_data('component-type')
       end
 
       def authoritative?
-        get_from_component['authoritative']
+        fetch_data('authoritative')
       end
 
       def authoritative
-        get_from_component['authoritative']
+        fetch_data('authoritative')
       end
 
       def deprecated
-        get_from_component['deprecated']
+        fetch_data('deprecated')
       end
 
       def deprecated?
@@ -229,7 +264,7 @@ module Simp
       end
 
       def revision
-        revision = get_from_release['revision']
+        revision = fetch_data('revision')
         if revision.nil?
           '0'
         elsif !revision
@@ -245,14 +280,14 @@ module Simp
           if release.key?(name)
             release[name]['revision'] = value
           else
-            release[name] = {'revision' => value}
+            release[name] = { 'revision' => value }
           end
         end
         release_source.dirty = true
       end
 
       def ref
-        get_from_release['ref']
+        fetch_data('ref')
       end
 
       def ref=(value)
@@ -261,49 +296,41 @@ module Simp
           if release.key?(name)
             release[name]['ref'] = value
           else
-            release[name] = {'ref' => value}
+            release[name] = { 'ref' => value }
           end
         end
         release_source.dirty = true
       end
 
       def branch
-        get_from_release['branch']
+        fetch_data('branch')
       end
 
       def branch=(value)
         release = release_source.releases[release_version]
         unless release.nil?
-          if release.key?(name)
-            release[name]['branch'] = value
-          else
-            release[name] = {'branch' => value}
-          end
+          release.key?(name) ? release[name]['branch'] = value : release[name] = { 'branch' => value }
         end
         release_source.dirty = true
       end
 
       def tag
-        get_from_release['tag']
+        fetch_data('tag')
       end
 
       def tag=(value)
         release = release_source.releases[release_version]
         unless release.nil?
-          if release.key?(name)
-            release[name]['tag'] = value
-          else
-            release[name] = {'tag' => value}
-          end
+          release.key?(name) ? release[name]['tag'] = value : release[name] = { 'tag' => value }
         end
         release_source.dirty = true
       end
 
       def version
         ver = ''
-        %w(version tag ref branch).each do |item|
-          unless get_from_release[item].nil?
-            ver = get_from_release[item]
+        %w[version tag ref branch].each do |item|
+          unless grab_from_release[item].nil?
+            ver = grab_from_release[item]
             break
           end
         end
@@ -316,31 +343,9 @@ module Simp
             system("git clone #{url} > /dev/null 2>&1")
             Dir.chdir("./#{module_name}") do
               exitcode = Simp::Metadata.run("git checkout #{version} > /dev/null 2>&1")
-              if exitcode == 0
-                true
-              else
-                false
-              end
+              exitcode == 0
             end
           end
-        end
-      end
-
-      def rpm_basename
-        if component_type == 'puppet-module'
-          if asset_name =~ /pupmod-*/
-            asset_name
-          else
-            "pupmod-#{asset_name}"
-          end
-        elsif component_type == 'rubygem'
-          if asset_name =~ /rubygem-*/
-            asset_name
-          else
-            "rubygem-#{asset_name}"
-          end
-        else
-          asset_name
         end
       end
 
@@ -355,17 +360,15 @@ module Simp
       def rpm_version
         if component_version =~ /^[0-9]+.[0-9]+.[0-9]+.[0-9]+/
           component_version
+        elsif !revision
+          component_version
         else
-          if !revision
-            component_version
-          else
-            "#{component_version}-#{revision}"
-          end
+          "#{component_version}-#{revision}"
         end
       end
 
       def target
-        target = get_from_release['target']
+        target = fetch_data('target')
         if target.nil?
           'noarch'
         else
@@ -376,11 +379,7 @@ module Simp
       def target=(value)
         release = release_source.releases[release_version]
         unless release.nil?
-          if release.key?(name)
-            release[name]['target'] = value
-          else
-            release[name] = {'target' => value}
-          end
+          release.key?(name) ? release[name]['target'] = value : release[name] = { 'target' => value }
         end
         release_source.dirty = true
       end
@@ -396,26 +395,24 @@ module Simp
 
       def rpm_name
         if component_type == 'puppet-module'
-          "#{rpm_basename}-#{rpm_version}.#{target}.rpm"
+          "#{package_name}-#{rpm_version}.#{target}.rpm"
+        elsif compiled?
+          "#{package_name}-#{rpm_version}.#{os_version}.#{target}.rpm"
         else
-          if compiled?
-            "#{rpm_basename}-#{rpm_version}.#{os_version}.#{target}.rpm"
-          else
-            "#{rpm_basename}-#{rpm_version}.#{target}.rpm"
-          end
+          "#{package_name}-#{rpm_version}.#{target}.rpm"
         end
       end
 
       def compiled?
-        if get_from_release.key?('compiled')
-          get_from_release['compiled']
+        if grab_from_release.key?('compiled')
+          grab_from_release['compiled']
         else
           false
         end
       end
 
       def binaryname
-        "#{asset_name}-#{version}.#{extension}"
+        "#{package_name}-#{version}.#{extension}"
       end
 
       def view(attribute)
@@ -431,7 +428,7 @@ module Simp
               location_hash.merge!(key => value.to_s) unless value.nil?
             end
           end
-          buildinfo_hash = {}
+          #buildinfo_hash = {}
           comp.buildinfo.each do |buildinfo|
             # Needs to be fixed/added to
             buildinfo.each do |_key, _value|
@@ -444,8 +441,7 @@ module Simp
         view_hash
       end
 
-      def create(component, settings={'ref' => nil})
-
+      def create(component, settings = { 'ref' => nil })
         begin
           engine.sources.each do |_name, metadata_source|
             if metadata_source.writable?
@@ -453,13 +449,12 @@ module Simp
             else
               engine.releases[options[:release]].components[component] = settings
             end
-            end
-          rescue
-            Simp::Metadata.critical("Unable to create #{component} for #{options[:release]} release")
-            exit 6
           end
+        rescue StandardError => e
+          Simp::Metadata::Debug.critical("Unable to create #{component} for #{options[:release]} release")
+          Simp::Metadata::Debug.abort(e.message)
         end
-
+      end
 
       def diff(component, attribute)
         diff = {}
@@ -475,8 +470,9 @@ module Simp
           end
           unless current_hash == comp_hash
             current_hash.each do |attr, value|
-              diff[attr] = {'original' => (current_hash[attr]).to_s,
-                            'changed' => (comp_hash[attr]).to_s} if comp_hash[attr] != value
+              if comp_hash[attr] != value
+                diff[attr] = { 'original' => (current_hash[attr]).to_s, 'changed' => (comp_hash[attr]).to_s }
+              end
             end
           end
           diff
@@ -484,7 +480,7 @@ module Simp
           v1 = self[attribute.to_s]
           v2 = component[attribute.to_s]
           unless v1 == v2
-            diff[attribute] = {'original' => v1.to_s, 'changed' => v2.to_s}
+            diff[attribute] = { 'original' => v1.to_s, 'changed' => v2.to_s }
             diff
           end
         end
@@ -499,32 +495,34 @@ module Simp
       end
 
       def build(destination)
-        component_rpm_build(name, destination)
+        rpm_builder = Simp::Metadata::RpmBuild.new(@engine, @release_version, name, options)
+        rpm_builder.component_rpm_build(name, destination)
       end
 
       def enterprise_paths
         [
-            "#{base_enterprise_path}/products/simp-enterprise/#{module_name}",
-            "#{base_enterprise_path}/products/simp-enterprise-dev/#{module_name}"
+          "#{base_enterprise_path}/products/simp-enterprise/#{module_name}",
+          "#{base_enterprise_path}/products/simp-enterprise-dev/#{module_name}"
         ]
       end
 
       def download_source(src = nil, file = rpm_name)
         output = nil
-        if src
-          sources = [src]
-        else
-          sources = component_source.to_s == 'enterprise-metadata' ? enterprise_paths : community_paths
-        end
+        sources = if src
+                    [src]
+                  else
+                    component_source.to_s == 'enterprise-metadata' ? enterprise_paths : community_paths
+                  end
         sources.each do |source|
-          if source =~ /^https?:/
+          case source
+          when /^https?:/
             file_check = `curl -sLI #{source}/#{file} | head -n 1 | awk '{print $2}'`.chomp
             if file_check == '200'
               output = source
               break
             end
-          elsif File.exist?("#{source}/#{file}")
-            output = source
+          else
+            output = source if File.exist?("#{source}/#{file}")
             break
           end
         end
@@ -532,7 +530,7 @@ module Simp
       end
 
       def download(destination, src = nil, file = rpm_name)
-        source = src ? src : download_source(nil, rpm_name)
+        source = src || download_source(nil, rpm_name)
         downloader(source, file, destination)
       end
     end

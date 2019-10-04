@@ -30,7 +30,7 @@ module Simp
             delete
             save
           rescue RuntimeError => e
-            Simp::Metadata.critical(e.message)
+            Simp::Metadata::Debug.critical(e.message)
             exit 5
           end
         end

@@ -1,4 +1,5 @@
 require_relative '../commands'
+
 module Simp
   module Metadata
     module Commands
@@ -11,43 +12,54 @@ module Simp
         end
 
         def valid_subcommands
-          %w[view diff download build update create delete find_release]
-        end
-
-        def engine
-          @engine
-        end
-
-        def root
-          @root
+          %w[view diff download build update create delete find]
         end
 
         def create
           options = defaults(argv) do |opts, _options|
-            opts.banner = 'Usage: simp-metadata component create <component_name> setting=<value>'
-            opts.banner << '    Creates a new component to be used within any Release'
+            opts.banner = 'Usage: simp-metadata component create <component_name> <setting>=<value>'
+            opts.banner << 'Info: Creates a new component to be used within any Release'
+            opts.banner << 'Required: primary_url must be passed as a setting'
+            opts.banner << 'Defaults:'
+            opts.banner << '    - authoritative: true'
+            opts.banner << '    - component-type: puppet-module'
+            opts.banner << '    - package-name: nil (Specify package(rpm) name if it differs from component name)'
+            opts.banner << '    - format: git'
+            opts.banner << '    - primary location type: git'
           end
           @engine, @root = get_engine(engine, options)
-          component = argv[2]
           argv.shift
-          data = { 'locations' => [{ 'primary' => true }] }
+          component = argv[0]
+          argv.shift
+          data = { 'authoritative' => true, 'format' => 'git', 'component-type' => 'puppet-module',
+                   'locations' => [{ 'url' => nil, 'type' => 'git','primary' => true }] }
           argv.each do |argument|
             split = argument.split('=')
-            setting = split[0]
-            value = split[1]
+            setting = split[0].gsub('_','-')
+            value = if split[1] == 'false'
+                      false
+                    elsif split[1] == 'true'
+                      true
+                    else
+                      split[1].to_s
+                    end
             case setting
-            when 'authoritative'
-              data[:authoritative] = value.to_s == 'true'
-            when 'format'
-              data[:format] = value
-            when 'component-type'
-              data[:component_type] = value
-            when 'primary_url'
-              data[:locations].first[:url] = value
-            when 'primary_url_type'
-              data[:locations].first[:type] = value
+            when 'authoritative', 'format', 'component-type', 'package-name'
+              data[setting.to_s] = value
+            when 'primary-url'
+              data['locations'].first['url'] = value
+            when 'primary-url-type'
+              data['locations'].first['type'] = value
+            else
+              Simp::Metadata::Debug.debug_level('debug2')
+              valid_settings = ['Valid Settings:','  -authoritative',  '  -package-name', '  -format',
+                                '  -component-type', '  -primary-url', '  -primary-url-type']
+              Simp::Metadata::Debug.info(valid_settings)
+              Simp::Metadata::Debug.info("Release specific information (ref, tag, etc) can not be used.")
+              Simp::Metadata::Debug.abort("Unrecognized setting #{setting} for component creation.")
             end
           end
+          Simp::Metadata::Debug.abort("Must pass primary_url to create component") unless data['locations'].first['url']
           engine.components.create(component, data)
         end
 
@@ -60,30 +72,37 @@ module Simp
           value = argv[3]
           options[:component] = component
           @engine, @root = get_engine(engine, options)
-          object = engine.releases[options[:release]].components[component]
+          # ToDo: Update code to allow non-release settings to be updated
           unless options[:release]
-            Simp::Metadata.critical("A SIMP Release must be specified to edit components")
-            exit 9
+            Simp::Metadata::Debug.abort("A SIMP Release (-r RELEASE) must be specified to edit components.")
           end
-          unless object.methods.include?(setting.to_sym)
-            Simp::Metadata.critical("#{setting} is not a valid setting")
-            exit 7
+          unless engine.base_components.key?(component)
+            Simp::Metadata::Debug.abort("Component does not exist in metadata. Try `simp-metadata component add`.")
           end
+
+          unless engine.releases[options[:release]].components.key?(component)
+            Simp::Metadata::Debug.abort("Component #{component} does not exit in release #{options[:release]}")
+          end
+
+          object = engine.releases[options[:release]].components[component]
+          methods = object.methods
+          Simp::Metadata::Debug.abort("#{setting} is not a valid setting") unless methods.include?(setting.to_sym)
           begin
             object.send("#{setting}=".to_sym, value)
           rescue NoMethodError => e
-            Simp::Metadata.critical("#{setting} is a read-only setting")
-            Simp::Metadata.critical(e.message)
-            Simp::Metadata.backtrace(e.backtrace)
-            exit 6
+            Simp::Metadata::Debug.critical(e.message)
+            Simp::Metadata::Debug.backtrace(e.backtrace)
+            Simp::Metadata::Debug.abort("#{setting} is a read-only setting")
           end
         end
 
-        def find_release
-          options = defaults(argv) do |opts, _options|
-            opts.banner = "Usage: simp-metadata component find_release <component> <attribute> <value>\n"
-            opts.banner << "  Output latest release where specified value is set for component's attribute"
-            opts.on('-s', '--show-all', 'Show all release matches') { |opt| options[:show_all] = opt }
+        def find
+          options = defaults(argv) do |parser, options|
+            parser.banner = "Usage: simp-metadata component find <component> <attribute> <value>\n"
+            parser.banner << "  Output latest release where specified value is set for component's attribute"
+            parser.on('-s', '--show-all', 'Show all release matches') do |show_all|
+              options[:show_all] = show_all
+            end
           end
           @engine, @root = get_engine(engine, options)
           component = argv[1]
@@ -94,19 +113,21 @@ module Simp
           releases.delete_if { |release| release =~ /test-/ }
           matches = []
           releases.each do |release|
+            next unless @engine.releases[release].components.key?(component)
+
             release_component = @engine.releases[release].components[component]
             matches.push(release) if release_component[attribute] == value
           end
 
           exit("No Releases found where #{component} #{attribute} = #{value}") if matches.empty?
-
+          regex_array = [/nightly/, /unstable/, /dev/]
           if options[:show_all]
-            output = matches
+            puts matches
           else
-            matches.delete_if { |match| [/nightly-/,'unstable','development'].include?(match) }
-            output = matches
+            matches.delete_if { |match| match.match?(Regexp.union(regex_array)) } unless options[:show_all]
+            *_rest, last = matches.sort
+            puts last
           end
-          puts output
         end
 
         def view
@@ -126,8 +147,11 @@ module Simp
             view = comp.view(attribute)
             puts view.to_yaml
           else
-            Simp::Metadata.critical("Unable to find component named #{component}")
-            exit 5
+            if @engine.base_components.key?(component)
+              Simp::Metadata::Debug.abort("Component #{component} is not utilized in release #{options[:release]}")
+            else
+              Simp::Metadata::Debug.abort("Unable to find component named #{component}")
+            end
           end
         end
 
@@ -169,7 +193,7 @@ module Simp
                    end
             comp.download(destination, source)
           else
-            Simp::Metadata.critical('Unable to find component to download')
+            Simp::Metadata::Debug.critical('Unable to find component to download')
             exit 5
           end
         end
@@ -188,12 +212,12 @@ module Simp
             release = options[:release] || 'unstable'
             comp = engine.releases[release].components[component]
             if comp.version == ''
-              Simp::Metadata.critical("#{component} not found in SIMP #{release}")
-              exit   11
+              Simp::Metadata::Debug.critical("#{component} not found in SIMP #{release}")
+              exit 11
             end
             comp.build(destination)
           else
-            Simp::Metadata.critical('Unable to build component')
+            Simp::Metadata::Debug.critical('Unable to build component')
             exit 5
           end
         end
@@ -211,6 +235,23 @@ module Simp
           engine.save(([:simp_metadata, 'component'] + argv).join(' ')) if @root
         end
 
+        def grab_component(input, options = {})
+          # ToDo: Make the search use engines if they already exist. Current method repeats engine grabs
+          # ToDo: w/ and w/o proper options set, causing bad data and extra time/resources to be spent
+          search = Simp::Metadata::Commands::Search.new
+          result = search.search([input], options)
+          if result.size == 1
+            result[0]
+          else
+            Simp::Metadata::Debug.debug_level('debug2')
+            warning = 'Multiple components found based on input. Please specify a component from the group above'
+            pretty_print_matches = ["Components matching input:"]
+            result.each {|res| pretty_print_matches.push("  -#{res}")}
+            Simp::Metadata::Debug.info(pretty_print_matches)
+            Simp::Metadata::Debug.abort(warning)
+          end
+        end
+
         def run(argv, engine = nil)
           @argv = argv
           @engine = engine
@@ -218,7 +259,7 @@ module Simp
           public_send(subcommand)
           save
         rescue RuntimeError => e
-          Simp::Metadata.critical(e.message)
+          Simp::Metadata::Debug.critical(e.message)
           exit 5
         end
       end

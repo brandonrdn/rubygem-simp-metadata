@@ -1,15 +1,12 @@
 AllCops:
+  TargetRubyVersion: 2.3
   Exclude:
     - 'Dangerfile'
     - 'Gemfile'
-    - 'features/**/*'
     - 'spec/**/*'
-    - 'jaeger.gemspec'
+    - 'simp-metadata.gemspec'
     - 'Rakefile'
     - 'vendor/**/*'
-    - 'local/**/*'
-    - 'node_modules/**/*'
-    - 'lib/jaeger/compliance_engine.rb'
 Lint/UnusedMethodArgument:
   Enabled: false
 
@@ -37,11 +34,11 @@ Style/FrozenStringLiteralComment:
   Enabled: false
 Style/SafeNavigation:
   Enabled: false
-Performance/RegexpMatch:
-  Enabled: false
 Style/NumericPredicate:
   Enabled: false
 Style/RedundantBegin:
   Enabled: false
 Style/WordArray:
   Enabled: false
+Style/FormatStringToken:
+  EnforcedStyle: template

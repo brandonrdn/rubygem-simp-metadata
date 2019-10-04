@@ -6,28 +6,21 @@ module Simp
   module Metadata
     # Set source information
     class Source
-      attr_accessor :assets, :basename, :cache_path, :components, :data, :edition, :engine, :isos,
+      attr_accessor :assets, :basename, :components, :data, :edition, :engine, :isos,
                     :name, :packages, :platforms, :releases, :url
 
       def initialize(args)
-        unless args.key?(:engine)
-          raise ':engine must be specified when initializing a metadata source'
-        end
-        unless args.key?(:name)
-          raise ':name must be specified when initializing a metadata source'
-        end
-        unless args.key?(:source)
-          raise ':component must be specified when initializing a metadata source'
-        end
-        unless args.key?(:edition)
-          raise ':edition must be specified when initializing a metadata source'
-        end
+        # args checks
+        raise ':engine must be specified when initializing a metadata source' unless args.key?(:engine)
+        raise ':name must be specified when initializing a metadata source' unless args.key?(:name)
+        raise ':component must be specified when initializing a metadata source' unless args.key?(:source)
+        raise ':edition must be specified when initializing a metadata source' unless args.key?(:edition)
 
         @engine = args[:engine]
         @name = args[:name]
         @source = args[:source]
         @edition = args[:edition]
-        @url = args[:url] ? args[:url] : @source.sources[@name][:locations][0][:url]
+        @url = args[:url] || @source.sources[@name][:locations][0][:url]
         @write_url = @url
         @components = {}
         @releases = {}
@@ -39,11 +32,10 @@ module Simp
         @platforms = {}
         @cleanup = []
         @options = @engine.options
-        options = @options.merge({target: @cache_path})
+        options = @options.merge(target: @cache_path)
 
         retval = Simp::Metadata.download_source(@source, options)
         load_from_dir(retval[:path])
-
         @dirty = false
       end
 
@@ -97,10 +89,10 @@ module Simp
       def create_release(destination, source = 'master')
         if @releases.key?(destination)
           raise "destination version #{destination} already exists"
-        end
-        unless @releases.key?(source)
+        elsif !@releases.key?(source)
           raise "source version #{source} doesn't exist"
         end
+
         self.dirty = true
         @releases[destination] = Marshal.load(Marshal.dump(@releases[source]))
       end
@@ -111,27 +103,40 @@ module Simp
 
       attr_writer :dirty
 
+      def directory(name)
+        prereleases = [/.*-[Aa][Ll][Pp][Hh][Aa].*/, /.*-[Bb][Ee][Tt][Aa].*/, /.*-[Rr][Cc].*/]
+        case name
+        when /^nightly-/
+          'nightlies'
+        when /unstable/
+          'channels'
+        when /^test-/
+          'tests'
+        when *prereleases
+          'prereleases'
+        else
+          'releases'
+        end
+      end
+
       def save(message = 'Auto-saving using simp-metadata')
-        #ToDo: Find a way to specify which files are dirty, rather than writing all of them each time
+        # TODO:  Find a way to specify which files are dirty, rather than writing all of them each time
         if dirty?
-          # Save components.yaml
-          File.open("#{@load_path}/v1/components.yaml", 'w') { |f| f.write({ 'components' => @components }.to_yaml) }
+          # Save :
+          deprecated_components = {}
+          current_components = {}
+          @components.each do |component, data|
+            data['deprecated'] ? deprecated_components[component] = data : current_components[component] = data
+          end
+          current_hash = { 'components' => current_components }
+          deprecated_hash = { 'components' => deprecated_components }
+          File.open("#{@load_path}/v1/components.yaml", 'w') { |f| f.write current_hash.to_yaml }
+          File.open("#{@load_path}/v1/deprecated.yaml", 'w') { |f| f.write deprecated_hash.to_yaml }
+
 
           # Save release files
-          prereleases = [/.*-[Aa][Ll][Pp][Hh][Aa].*/, /.*-[Bb][Ee][Tt][Aa].*/, /.*-[Rr][Cc].*/]
           @releases.each do |release_name, data|
-            directory = case release_name
-                        when *prereleases
-                          'prereleases'
-                        when /^nightly-/
-                          'nightlies'
-                        when /unstable/
-                          'channels'
-                        when /^test-/
-                          'tests'
-                        else
-                          'releases'
-                        end
+            directory = directory(release_name)
             FileUtils.mkdir_p("#{@load_path}/v1/#{directory}")
             new_file_content = { 'releases' => { release_name.to_s => data } }.to_yaml
             File.open("#{@load_path}/v1/#{directory}/#{release_name}.yaml", 'w') { |file| file.write(new_file_content) }
@@ -148,71 +153,29 @@ module Simp
             if exit_code == 0
               puts "Successfully updated #{name}"
             else
-              Simp::Metadata.critical('error committing and pushing changes')
+              Simp::Metadata::Debug.critical('error committing and pushing changes')
               raise exit_code.to_s
             end
           end
           self.dirty = false
         end
       end
-=begin
-          # ToDo: Write files to yaml, commit and push (where appropriate)
-          Simp::Metadata.run("cd #{@load_path} && rm -rf v1")
-          FileUtils.mkdir_p("#{@load_path}/v1")
-          File.open("#{@load_path}/v1/components.yaml", 'w') { |file| file.write({ 'components' => @components }.to_yaml) }
-          prereleases = [/.*-[Aa][Ll][Pp][Hh][Aa].*/, /.*-[Bb][Ee][Tt][Aa].*/, /.*-[Rr][Cc].*/]
-          @releases.each do |release_name, data|
-            directory = case release_name
-                        when *prereleases
-                          'prereleases'
-                        when /^nightly-/
-                          'nightlies'
-                        when /unstable/
-                          'channels'
-                        when /^test-/
-                          'tests'
-                        else
-                          'releases'
-                        end
-            FileUtils.mkdir_p("#{@load_path}/v1/#{directory}")
-            File.open("#{@load_path}/v1/#{directory}/#{release_name}.yaml", 'w') { |file| file.write({ 'releases' => { release_name.to_s => data } }.to_yaml) }
-          end
-          Simp::Metadata.run("cd #{@load_path} && git remote add upstream #{write_url}")
-          Simp::Metadata.run("cd #{@load_path} && git remote set-url upstream #{write_url}")
-          exitcode = Simp::Metadata.run("cd #{@load_path} && git add -A && git commit -m '#{message}'; git push upstream master")
-          if exitcode != 0
-            Simp::Metadata.critical('error committing changes')
-            raise exitcode.to_s
-          else
-            puts "Successfully updated #{name}"
-          end
-          self.dirty = false
-        end
-      end
-=end
 
       def load_from_dir(path)
         @load_path = path
         Dir.chdir(path) do
           Dir.glob('**/*.yaml') do |filename|
-            begin
-              # If savable, load all files, otherwise, load only used files to prevent engine from being too stacked
-              if @options[:save]
-                hash = YAML.load_file(filename)
-                @data = deep_merge(@data, hash)
-              elsif filename.match?(Regexp.union([/components.yaml/, /#{@options[:release]}/]))
-                hash = YAML.load_file(filename)
-                @data = deep_merge(@data, hash)
-              end
-            end
+            #if filename.match?(Regexp.union([/components.yaml/, /deprecated.yaml/, /#{@options[:release]}/]))
+              hash = YAML.load_file(filename)
+              @data = deep_merge(@data, hash)
+            #end
           end
         end
-        @releases = @data['releases'] unless @data['releases'].nil?
-        @components = @data['components'] unless @data['components'].nil?
-        @assets = @data['assets'] unless @data['assets'].nil?
-        @packages = @data['packages'] unless @data['packages'].nil?
-        @isos = @data['isos'] unless @data['isos'].nil?
-        @platforms = @data['platforms'] unless @data['platforms'].nil?
+        variables = ['releases', 'components', 'assets', 'packages', 'isos', 'platforms']
+        variables.each do |var|
+          variable = instance_variables.select { |name| name.to_s == "@#{var}" }[0]
+          instance_variable_set(variable, @data[var]) if @data[var]
+        end
         remove_instance_variable(:@data)
       end
 

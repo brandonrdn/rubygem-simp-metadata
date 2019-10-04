@@ -127,7 +127,7 @@ module Simp
       end
 
       def components
-        engine.releases[@release_version].sources
+        engine.components
       end
 
       def packages
@@ -135,13 +135,28 @@ module Simp
       end
 
       def community_paths
-        [
-          "#{base_community_path}/yum/simp6/el/#{el_version_number}/x86_64",
-          "#{base_community_path}/yum/unstable/simp6/el/#{el_version_number}/x86_64/simp",
-          "#{base_community_path}/yum/unstable/simp6/el/#{el_version_number}/x86_64/epel",
-          "#{base_community_path}/yum/unstable/simp6/el/#{el_version_number}/x86_64/postgresql",
-          "#{base_community_path}/yum/unstable/simp6/el/#{el_version_number}/x86_64/puppet"
+        release = options[:release]
+        release_dirs = [release, release.split('-')[0]]
+        # Start with General dirs
+        output = [
+            "#{base_community_path}/yum/simp6/el/#{el_version_number}/x86_64",
+            "#{base_community_path}/yum/unstable/simp6/el/#{el_version_number}/x86_64/simp",
+            "#{base_community_path}/yum/unstable/simp6/el/#{el_version_number}/x86_64/epel",
+            "#{base_community_path}/yum/unstable/simp6/el/#{el_version_number}/x86_64/postgresql",
+            "#{base_community_path}/yum/unstable/simp6/el/#{el_version_number}/x86_64/puppet"
         ]
+        # Add releases and rolling dirs
+        releases_base = "#{base_community_path}/yum/releases"
+        rolling_base = "#{base_community_path}/yum/rolling"
+        ['simp','postgresql','epel','puppet'].each do |repo|
+          # Add releases and rolling repos
+          release_dirs.each { |rel| output.push("#{releases_base}/#{rel}/el/#{el_version_number}/x86_64/#{repo}") }
+          release_dirs.each { |rel| output.push("#{rolling_base}/#{rel}/el/#{el_version_number}/x86_64/#{repo}") }
+          # Add legacy Release repos
+          release_dirs.each { |rel| output.push("#{releases_base}/#{rel}/#{el_version.upcase}/core") }
+          release_dirs.each { |rel| output.push("#{releases_base}/#{rel}/#{el_version.upcase}/dependencies") }
+        end
+        output
       end
 
       def build_assets_path
@@ -166,6 +181,38 @@ module Simp
         src =~ /https?/ ? `#{command}` : `cp -r #{src}/* #{dest}`
       end
 
+      def iso_check
+        if File.exist?("#{iso_dir}/#{iso_name}")
+          puts "### SIMP ISO #{iso_name} already exists! Not building for existing ISO"
+          exit 12
+        end
+      end
+
+      def tarball_check
+        build_tarball = true
+        extract_dir = nil
+        if options[:overlay_tarball] && File.exist?("#{tar_cache}/#{overlay_tarball_name}")
+          extract_dir = tar_cache
+          build_tarball = false
+        end
+        [build_tarball, extract_dir]
+      end
+
+      def rpm_copy(source, destination)
+        FileUtils.makedirs destination.to_s unless File.directory?(destination)
+        rpms = Dir.glob(File.join(source.to_s, "**", "*rpm"))
+        rpms.each { |rpm| FileUtils.cp rpm, destination }
+      end
+
+      def build_preserve(dirs)
+        dirs.each do |dir|
+          path = dir.split("#{extract_dir}/")[-1]
+          FileUtils.makedirs("#{build_rpm_dir}/#{path}")
+          rpms = Dir.glob(File.join(dir, '*.rpm'))
+          rpms.each { |rpm| FileUtils.copy rpm, "#{build_rpm_dir}/#{path}" }
+        end
+      end
+
       def create_tarball(source_dir, dest_dir, name)
         Simp::Metadata.run("tar -czvf #{dest_dir}/#{name} #{source_dir}")
       end
@@ -176,7 +223,7 @@ module Simp
       end
 
       def project_dir
-        File.join(File.dirname(__FILE__), '../../../')
+        Simp::Metadata.main_project_dir
       end
 
       def simp_rpm
@@ -186,7 +233,7 @@ module Simp
       def get_simp_rpm(dest)
         unless File.exist?("#{dest}/#{simp_rpm}")
           downloader(download_source(nil, simp_rpm), simp_rpm, dest)
-          abort(Simp::Metadata.critical("Failed to download #{simp_rpm}")[0]) unless File.exist("#{dest}/#{simp_rpm}")
+          Simp::Metadata::Debug.abort("Failed to download #{simp_rpm}") unless File.exist("#{dest}/#{simp_rpm}")
         end
       end
 
@@ -198,7 +245,7 @@ module Simp
         unless File.exist?("#{dest}/#{simp_doc_rpm}")
           downloader(download_source(nil, simp_doc_rpm), simp_doc_rpm, simp_doc_rpm)
           unless File.exist?("#{dest}/#{simp_doc_rpm}")
-            abort(Simp::Metadata.critical("Failed to download #{simp_doc_rpm}")[0])
+            abort(Simp::Metadata::Debug.critical("Failed to download #{simp_doc_rpm}")[0])
           end
         end
       end
