@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.license = 'Apache-2.0'
   s.homepage = 'https://github.com/simp/rubygem-simp-metadata'
   s.files = Dir['Rakefile', '{bin,lib,spec}/**/*', 'README*', 'LICENSE*']
-  s.add_runtime_dependency 'require_all', '~> 2.0'
+  s.add_runtime_dependency 'require_all'
   s.add_development_dependency 'pry', '~> 0.12'
   s.add_development_dependency 'rake', '~> 11.3'
   s.add_development_dependency 'redcarpet', '~> 3.5'
